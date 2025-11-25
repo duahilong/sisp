@@ -46,27 +46,70 @@ def validate_input_parameters(disk_number, efi_size=None, efi_letter=None, c_siz
             if disk_number > max_disk_index:
                 raise ValueError(f"磁盘编号 {disk_number} 超出系统范围。系统共有 {total_disks} 个磁盘，有效磁盘编号范围为 0-{max_disk_index}。")
             
-            print(f"磁盘编号验证通过: {disk_number} (系统共有 {total_disks} 个磁盘)")
-            
         except Exception as e:
             if "无法获取系统磁盘信息或系统中没有磁盘" in str(e):
                 raise e
             else:
                 raise ValueError(f"磁盘编号验证失败: {e}")
         
-        # 3. EFI分区参数验证
+        # 3. EFI分区参数验证，验证EFI分区大小，检查EFI分区大小是否超过磁盘容量的1/10
         if efi_size is not None:
             if not isinstance(efi_size, int) or efi_size <= 0:
                 raise ValueError("EFI分区大小必须是正整数。")
+            
+            # 验证EFI分区大小是否超过磁盘容量的1/10
+            try:
+                disk_manager = DiskManager()
+                disk_info = disk_manager.get_disk_by_index(disk_number)
+                
+                if disk_info is None:
+                    raise ValueError(f"未找到磁盘编号 {disk_number}。")
+                
+                # 解析磁盘容量（格式为 "XX.XX GB"）
+                disk_capacity_str = disk_info.capacity.replace("GB", "").strip()
+                disk_capacity_gb = float(disk_capacity_str)
+                
+                # 将efi_size从MB转换为GB进行比较
+                efi_size_gb = efi_size / 1024.0
+                max_efi_size_gb = disk_capacity_gb / 10.0
+                
+                # 检查EFI分区大小是否超过磁盘容量的1/10
+                if efi_size_gb > max_efi_size_gb:
+                    raise ValueError(f"EFI分区大小 ({efi_size} MB / {efi_size_gb:.2f} GB) 超出磁盘 {disk_number} 容量的1/10 ({max_efi_size_gb:.2f} GB)。")
+                
+            except Exception as e:
+                raise ValueError(f"EFI分区大小验证失败: {e}")
                 
         if efi_letter is not None:
             if not isinstance(efi_letter, str) or len(efi_letter) != 1 or efi_letter not in string.ascii_uppercase:
                 raise ValueError("EFI分区盘符必须是单个大写字母。")
         
-        # 4. C分区参数验证
+        # 4. C分区参数验证，验证C分区大小
         if c_size is not None:
             if not isinstance(c_size, int) or c_size <= 0:
                 raise ValueError("C分区大小必须是正整数。")
+            
+            # 验证C分区大小是否超出磁盘容量
+            try:
+                disk_manager = DiskManager()
+                disk_info = disk_manager.get_disk_by_index(disk_number)
+                
+                if disk_info is None:
+                    raise ValueError(f"未找到磁盘编号 {disk_number}。")
+                
+                # 解析磁盘容量（格式为 "XX.XX GB"）
+                disk_capacity_str = disk_info.capacity.replace("GB", "").strip()
+                disk_capacity_gb = float(disk_capacity_str)
+                
+                # 将c_size从MB转换为GB进行比较
+                c_size_gb = c_size / 1024.0
+                
+                # 检查C分区大小是否超出磁盘容量
+                if c_size_gb > disk_capacity_gb:
+                    raise ValueError(f"C分区大小 ({c_size} MB / {c_size_gb:.2f} GB) 超出磁盘 {disk_number} 的总容量 ({disk_capacity_gb} GB)。")
+                
+            except Exception as e:
+                raise ValueError(f"C分区大小验证失败: {e}")
                 
         if c_letter is not None:
             if not isinstance(c_letter, str) or len(c_letter) != 1 or c_letter not in string.ascii_uppercase:
@@ -92,60 +135,6 @@ def validate_input_parameters(disk_number, efi_size=None, efi_letter=None, c_siz
                                           ('d_letter', d_letter), ('e_letter', e_letter)]:
             if letter_value is not None and letter_value in reserved_letters:
                 raise ValueError(f"{letter_param} 不能设置为 '{letter_value}'，因为 '{letter_value}' 是保留盘符。")
-        
-        # 8. 验证磁盘容量是否足够
-        # 分别验证EFI分区大小和C分区大小（EFI优先验证）
-        
-        # 7.1. 验证EFI分区大小
-        if efi_size is not None:
-            try:
-                disk_manager = DiskManager()
-                disk_info = disk_manager.get_disk_by_index(disk_number)
-                
-                if disk_info is None:
-                    raise ValueError(f"未找到磁盘编号 {disk_number}。")
-                
-                # 解析磁盘容量（格式为 "XX.XX GB"）
-                disk_capacity_str = disk_info.capacity.replace("GB", "").strip()
-                disk_capacity_gb = float(disk_capacity_str)
-                
-                # 将efi_size从MB转换为GB进行比较
-                efi_size_gb = efi_size / 1024.0
-                max_efi_size_gb = disk_capacity_gb / 10.0
-                
-                # 检查EFI分区大小是否超过磁盘容量的1/10
-                if efi_size_gb > max_efi_size_gb:
-                    raise ValueError(f"EFI分区大小 ({efi_size} MB / {efi_size_gb:.2f} GB) 超出磁盘 {disk_number} 容量的1/10 ({max_efi_size_gb:.2f} GB)。")
-                
-                print(f"EFI分区大小验证通过: {efi_size} MB / {efi_size_gb:.2f} GB (最大允许: {max_efi_size_gb:.2f} GB)")
-                
-            except Exception as e:
-                raise ValueError(f"EFI分区大小验证失败: {e}")
-        
-        # 7.2. 验证C分区大小
-        if c_size is not None:
-            try:
-                disk_manager = DiskManager()
-                disk_info = disk_manager.get_disk_by_index(disk_number)
-                
-                if disk_info is None:
-                    raise ValueError(f"未找到磁盘编号 {disk_number}。")
-                
-                # 解析磁盘容量（格式为 "XX.XX GB"）
-                disk_capacity_str = disk_info.capacity.replace("GB", "").strip()
-                disk_capacity_gb = float(disk_capacity_str)
-                
-                # 将c_size从MB转换为GB进行比较
-                c_size_gb = c_size / 1024.0
-                
-                # 检查C分区大小是否超出磁盘容量
-                if c_size_gb > disk_capacity_gb:
-                    raise ValueError(f"C分区大小 ({c_size} MB / {c_size_gb:.2f} GB) 超出磁盘 {disk_number} 的总容量 ({disk_capacity_gb} GB)。")
-                
-                print(f"C分区大小验证通过: {c_size} MB / {c_size_gb:.2f} GB (磁盘总容量: {disk_capacity_gb} GB)")
-                
-            except Exception as e:
-                raise ValueError(f"C分区大小验证失败: {e}")
         
         return True
         
@@ -355,14 +344,14 @@ def execute_diskpart_command(commands, capture_output=False):
                     ['diskpart', '/s', script_path],
                     capture_output=True,
                     text=True,
-                    timeout=300  # 5分钟超时
+                    timeout=120  # 2分钟超时
                 )
                 return result.stdout + result.stderr
             else:
                 result = subprocess.run(
                     ['diskpart', '/s', script_path],
                     capture_output=True,
-                    timeout=300  # 5分钟超时
+                    timeout=120  # 2分钟超时
                 )
                 return result.returncode == 0
                 
