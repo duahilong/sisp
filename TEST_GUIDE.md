@@ -3,13 +3,6 @@
 ## 测试脚本说明
 
 
-### 1. test_partition_manual.py - 完整测试版本
-功能齐全，包含参数验证、磁盘信息展示、操作确认等安全特性。
-
-**使用方法：**
-```bash
-python test_partition_manual.py <磁盘编号> <EFI大小> <主分区大小> <盘符1> <盘符2> <EFI盘符>
-```
 
 **示例：**
 ```bash
