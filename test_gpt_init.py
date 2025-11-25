@@ -3,102 +3,146 @@
 """
 测试脚本：验证 initialize_disk_to_gpt 函数功能
 
-使用方法：
-1. 修改下面的测试参数
-2. 运行脚本：python test_gpt_init.py
+功能说明：
+    该脚本用于测试GPT磁盘初始化功能，通过命令行参数接收配置，
+    调用partition_disk.py中的initialize_disk_to_gpt函数执行GPT初始化操作。
 
-注意：此脚本会执行磁盘操作，请确保：
-- 以管理员权限运行
-- 选择正确的磁盘编号
-- 已备份重要数据
+执行流程：
+    1. 解析命令行参数
+    2. 验证必要参数是否提供
+    3. 显示操作警告和参数信息
+    4. 调用GPT初始化函数执行操作
+    5. 根据执行结果输出简洁信息（成功）或详细错误信息（失败）
+
+使用方法：
+    python test_gpt_init.py --disk_number 2 --efi_size 200 --efi_letter P
+
+命令行参数说明：
+    --disk_number   磁盘编号 (必填) - 要操作的磁盘编号，例如：0, 1, 2, 3 等
+    --efi_size      EFI分区大小 (可选) - EFI分区大小(MB)，例如：100, 200, 512 等
+    --efi_letter    EFI分区盘符 (可选) - EFI分区的盘符，例如：'S', 'T', 'Z' 等
+                    注意：不能使用 C, D 这两个保留盘符
+
+注意事项：
+    - 此脚本会清除选定磁盘上的所有数据，请谨慎操作
+    - 请确保以管理员权限运行此脚本
+    - 请确保磁盘编号正确，避免误操作
 """
 
 import sys
 import os
 import traceback
+import argparse  # 用于解析命令行参数
 
 # 添加当前目录到Python路径，以便导入我们的模块
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 from partition_disk import initialize_disk_to_gpt
 
-def test_gpt_initialization():
+def test_gpt_initialization(disk_number, efi_size=None, efi_letter=None):
     """
     测试GPT初始化函数
     
-    在这里修改您的测试参数：
+    参数:
+        disk_number (int): 要操作的磁盘编号
+        efi_size (int, optional): EFI分区大小(MB)
+        efi_letter (str, optional): EFI分区盘符
+    
+    返回:
+        bool: GPT初始化是否成功
     """
     
-    # ========== 测试参数配置区域 ==========
-    # 请根据您的实际情况修改以下参数：
-    
-    # 磁盘编号 (必填) - 要操作的磁盘编号，通常是 0, 1, 2, 3 等
-    DISK_NUMBER = 3
-    
-    # EFI分区大小 (可选) - EFI分区大小(MB)，例如：100, 200, 512 等
-    EFI_SIZE = 200
-    
-    # EFI分区盘符 (可选) - EFI分区的盘符，例如：'S', 'T', 'Z' 等
-    # 注意：不能使用 C, D 这两个保留盘符
-    EFI_LETTER = 'P'
-    
-    # ========================================
-    
-    print("="*60)
+    print("=" * 60)
     print("GPT磁盘初始化测试")
-    print("="*60)
+    print("=" * 60)
     print(f"测试参数:")
-    print(f"  - 磁盘编号: {DISK_NUMBER}")
-    print(f"  - EFI分区大小: {EFI_SIZE} MB")
-    print(f"  - EFI分区盘符: {EFI_LETTER}")
-    print("-"*60)
+    print(f"  - 磁盘编号: {disk_number}")
+    print(f"  - EFI分区大小: {efi_size} MB")
+    print(f"  - EFI分区盘符: {efi_letter}")
+    print("-" * 60)
     
-    # 警告信息
+    # 显示重要警告信息
     print("⚠️  重要警告:")
     print("  此操作将清除选定磁盘上的所有数据！")
     print("  请确保以管理员权限运行此脚本")
     print("  请确保磁盘编号正确")
-    print("-"*60)
+    print("-" * 60)
     
     print("开始执行GPT初始化...")
     
     try:
-        # 调用GPT初始化函数
+        # 调用GPT初始化函数执行操作
         result = initialize_disk_to_gpt(
-            disk_number=DISK_NUMBER,
-            efi_size=EFI_SIZE,
-            efi_letter=EFI_LETTER
+            disk_number=disk_number,
+            efi_size=efi_size,
+            efi_letter=efi_letter
         )
         
-        print("-"*60)
+        print("-" * 60)
         if result:
-            print("✅ GPT初始化成功完成！")
-            print(f"  磁盘 {DISK_NUMBER} 已成功转换为GPT格式")
-            if EFI_SIZE and EFI_LETTER:
-                print(f"  EFI分区 ({EFI_SIZE}MB, 盘符: {EFI_LETTER}) 创建完成")
+            # 成功时输出简洁信息
+            print(f"✅ 磁盘 {disk_number} GPT初始化成功")
         else:
-            print("❌ GPT初始化失败")
+            # 失败时输出详细错误信息
+            print(f"❌ 磁盘 {disk_number} GPT初始化失败")
+            print("  可能原因:")
+            print("  - 磁盘编号错误")
+            print("  - 权限不足（未以管理员身份运行）")
+            print("  - 磁盘正在被使用")
+            print("  - 磁盘硬件问题")
             
         return result
         
     except Exception as e:
+        # 发生异常时输出完整错误信息
         print(f"❌ 执行过程中发生异常: {e}")
-        print("详细错误信息:")
-        traceback.print_exc()
+        print("\n详细错误信息:")
+        traceback.print_exc()  # 输出完整的堆栈跟踪
+        print("\n异常类型:", type(e).__name__)
+        print("异常信息:", str(e))
         return False
 
 def main():
     """
     主函数
+    负责解析命令行参数并调用测试函数
     """
-    print("GPT磁盘初始化测试脚本")
-    print("版本: 1.1")
-    print("")
+    # 创建参数解析器
+    parser = argparse.ArgumentParser(
+        description="GPT磁盘初始化测试脚本",
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+        epilog="示例用法：python test_gpt_init.py --disk_number 2 --efi_size 200 --efi_letter P"
+    )
     
-    # 直接执行测试，无需用户输入
-    test_gpt_initialization()
+    # 添加命令行参数
+    parser.add_argument(
+        "--disk_number",
+        type=int,
+        required=True,
+        help="磁盘编号（必填）- 要操作的磁盘编号，例如：0, 1, 2, 3 等"
+    )
     
-    print("\n测试完成")
+    parser.add_argument(
+        "--efi_size",
+        type=int,
+        help="EFI分区大小（可选）- EFI分区大小(MB)，例如：100, 200, 512 等"
+    )
+    
+    parser.add_argument(
+        "--efi_letter",
+        type=str,
+        help="EFI分区盘符（可选）- EFI分区的盘符，例如：'S', 'T', 'Z' 等\n注意：不能使用 C, D 这两个保留盘符"
+    )
+    
+    # 解析命令行参数
+    args = parser.parse_args()
+    
+    # 执行测试函数，传入解析后的参数
+    test_gpt_initialization(
+        disk_number=args.disk_number,
+        efi_size=args.efi_size,
+        efi_letter=args.efi_letter
+    )
 
 if __name__ == "__main__":
     main()
