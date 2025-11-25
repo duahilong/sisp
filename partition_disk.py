@@ -161,13 +161,11 @@ def initialize_disk_to_gpt(disk_number, efi_size=None, efi_letter=None,):
     try:
         # 1. 检查管理员权限
         if not is_admin():
-            print("错误: 需要管理员权限才能执行磁盘分区操作")
-            return False
+            raise PermissionError("磁盘分区操作需要管理员权限。请以管理员身份运行此程序。")
         
         # 2. 首先验证输入参数
         if not validate_input_parameters(disk_number, efi_size, efi_letter, None, None, None, None):
-            print("错误: 输入参数验证失败")
-            return False
+            raise ValueError(f"参数验证失败: 磁盘编号={disk_number}, EFI大小={efi_size}, EFI盘符={efi_letter}")
         
         # 3. 构建DiskPart脚本命令
         diskpart_commands = [
@@ -178,16 +176,13 @@ def initialize_disk_to_gpt(disk_number, efi_size=None, efi_letter=None,):
         ]
         
         # 4. 执行DiskPart命令进行初始化
-        print(f"正在初始化磁盘 {disk_number} 为GPT格式...")
         
         # 第一个命令集：基础初始化
         result = execute_diskpart_command(diskpart_commands)
         if not result:
-            print(f"错误: 磁盘 {disk_number} 初始化GPT格式失败")
-            return False
+            raise RuntimeError(f"磁盘 {disk_number} 的GPT初始化失败。可能的原因：1)磁盘被占用；2)磁盘损坏；3)DiskPart命令执行异常。请检查磁盘状态并重试。")
         
         # 5. 检查并删除MSR分区 (convert gpt后第一个分区默认为MSR分区)
-        print("检查并处理MSR分区...")
         msr_delete_commands = [
             f"select disk {disk_number}",
             "list partition",
@@ -196,13 +191,10 @@ def initialize_disk_to_gpt(disk_number, efi_size=None, efi_letter=None,):
         ]
         
         delete_result = execute_diskpart_command(msr_delete_commands)
-        if delete_result:
-            print("MSR分区删除成功")
-        else:
-            print("警告: 删除MSR分区失败，但不影响GPT初始化")
+        if not delete_result:
+            print("警告: MSR分区删除失败，但不影响GPT初始化")
         
         # 6. 验证GPT初始化是否成功
-        print("验证GPT初始化结果...")
         
         # 使用disk_info模块验证磁盘格式
         try:
@@ -211,14 +203,9 @@ def initialize_disk_to_gpt(disk_number, efi_size=None, efi_letter=None,):
             partition_style = disk_manager._get_partition_style(disk_number)
             
             if partition_style != "GPT":
-                print(f"错误: 磁盘 {disk_number} 当前格式为 '{partition_style}'，不是GPT格式")
-                return False
-            
-            print(f"磁盘 {disk_number} 成功初始化为GPT格式")
+                raise RuntimeError(f"磁盘 {disk_number} 当前格式为 '{partition_style}'，不是GPT格式。转换可能未成功或磁盘格式检查异常。")
             
         except Exception as e:
-            print(f"警告: 无法通过disk_info验证磁盘格式，尝试备用验证方法: {e}")
-            
             # 备用验证方法：使用DiskPart命令
             disk_verify_commands = [
                 f"select disk {disk_number}",
@@ -227,8 +214,7 @@ def initialize_disk_to_gpt(disk_number, efi_size=None, efi_letter=None,):
             
             disk_verify_result = execute_diskpart_command(disk_verify_commands, capture_output=True)
             if not disk_verify_result:
-                print(f"错误: 无法验证磁盘 {disk_number} 的GPT初始化结果")
-                return False
+                raise RuntimeError(f"无法验证磁盘 {disk_number} 的GPT初始化结果。可能是DiskPart命令执行失败或磁盘访问异常。")
             
             # 检查磁盘格式是否为GPT - 搜索输出中的GPT标识
             disk_lines = disk_verify_result.split('\n')
@@ -240,23 +226,16 @@ def initialize_disk_to_gpt(disk_number, efi_size=None, efi_letter=None,):
                     break
             
             if not disk_format_valid:
-                print(f"错误: 磁盘 {disk_number} 未成功转换为GPT格式")
-                print("磁盘格式化验证失败")
-                return False
-            
-            print(f"磁盘 {disk_number} 成功初始化为GPT格式（通过备用验证方法）")
+                raise RuntimeError(f"磁盘 {disk_number} 未成功转换为GPT格式。DiskPart命令执行可能失败或磁盘状态异常。请检查磁盘是否被其他程序占用。")
         
         # 然后验证分区状态（确认MSR分区已删除）
-        print("验证分区清理状态...")
         partition_verify_commands = [
             f"select disk {disk_number}",
             "list partition"
         ]
         
         partition_verify_result = execute_diskpart_command(partition_verify_commands, capture_output=True)
-        if not partition_verify_result:
-            print("警告: 无法检查分区状态，但GPT转换已成功")
-        else:
+        if partition_verify_result:
             # 检查是否还有分区（除了可能的EFI分区）
             partition_lines = partition_verify_result.split('\n')
             partition_count = 0
@@ -277,12 +256,9 @@ def initialize_disk_to_gpt(disk_number, efi_size=None, efi_letter=None,):
             
             if partition_count > 0:
                 print(f"警告: 磁盘 {disk_number} 仍有 {partition_count} 个分区（MSR分区删除可能未完全成功）")
-            else:
-                print("分区清理验证通过，无残留分区")
         
         # 7. 如果提供了EFI参数，可以选择创建EFI分区
         if efi_size is not None and efi_letter is not None:
-            print(f"正在创建EFI分区 ({efi_size}MB, 盘符: {efi_letter})...")
             efi_commands = [
                 f"select disk {disk_number}",
                 f"create partition efi size={efi_size}",
@@ -291,15 +267,23 @@ def initialize_disk_to_gpt(disk_number, efi_size=None, efi_letter=None,):
             ]
             
             efi_result = execute_diskpart_command(efi_commands)
-            if efi_result:
-                print(f"EFI分区创建成功")
-            else:
-                print("警告: EFI分区创建失败")
+            if not efi_result:
+                raise RuntimeError(f"EFI分区创建失败。请检查磁盘 {disk_number} 是否可用，以及指定的盘符 {efi_letter} 是否已被占用。")
         
+        print("✅ 磁盘GPT初始化成功完成")
         return True
         
+    except PermissionError as e:
+        print(f"❌ 权限错误: {e}")
+        return False
+    except ValueError as e:
+        print(f"❌ 参数错误: {e}")
+        return False
+    except RuntimeError as e:
+        print(f"❌ 执行错误: {e}")
+        return False
     except Exception as e:
-        print(f"初始化磁盘为GPT时发生错误: {e}")
+        print(f"❌ 未知错误: {e}")
         return False
 
 
