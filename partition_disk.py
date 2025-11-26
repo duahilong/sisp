@@ -289,14 +289,12 @@ def initialize_disk_to_gpt(disk_number, efi_size=None, efi_letter=None,):
 
 def initialize_disk_to_partitioning_C (disk_number, c_size= None, c_letter=None):
     """
-    初始化磁盘为GPT格式并创建必要的分区
+    创建NTFS的C分区
     
     Args:
         disk_number (int): 磁盘编号
         c_size (int, optional): C分区大小（MB），默认None
         c_letter (str, optional): C分区盘符，默认None
-        d_letter (str, optional): D分区盘符，默认None
-        e_letter (str, optional): E分区盘符，默认None
         
     Returns:
         bool: 初始化成功返回True，失败返回False
@@ -316,21 +314,17 @@ def initialize_disk_to_partitioning_C (disk_number, c_size= None, c_letter=None)
         validation_result = validate_input_parameters(
             disk_number=disk_number,
             c_size=c_size,
-            c_letter=c_letter,
-            d_letter=d_letter,
-            e_letter=e_letter
+            c_letter=c_letter
         )
         
         if not validation_result:
             print("错误: 参数验证失败，磁盘分区初始化终止")
             return False
         
-        print("输入参数验证通过")
         
         # 3. 构建diskpart命令
         print(f"开始为磁盘 {disk_number} 创建分区...")
-        
-        # 第一部分：处理C分区创建
+
         if c_size is not None and c_letter is not None:
             print("创建C分区...")
             c_partition_commands = [
@@ -339,84 +333,79 @@ def initialize_disk_to_partitioning_C (disk_number, c_size= None, c_letter=None)
                 "format quick fs=ntfs override",
                 f"assign letter={c_letter}"
             ]
-            
+
             c_partition_result = execute_diskpart_command(c_partition_commands)
             if not c_partition_result:
                 print("错误: C分区创建失败")
                 return False
             print("C分区创建成功")
-        
-        # 第二部分：处理其他分区（D分区、E分区等）
-        other_partition_commands = []
-        
-        # 如果提供了D分区参数，创建D分区
-        if d_letter is not None:
-            other_partition_commands.extend([
-                "create partition primary",
-                "format fs=ntfs quick label=DATA",
-                f"assign letter={d_letter}"
-            ])
-        
-        # 如果提供了E分区参数，创建E分区
-        if e_letter is not None:
-            other_partition_commands.extend([
-                "create partition primary", 
-                "format fs=ntfs quick label=EXTRA",
-                f"assign letter={e_letter}"
-            ])
-        
-        # 执行其他分区创建命令
-        if other_partition_commands:
-            print("创建其他分区...")
-            other_partition_commands_full = [f"select disk {disk_number}"] + other_partition_commands
-            other_partition_result = execute_diskpart_command(other_partition_commands_full)
+
+            # 4. 验证C分区创建成功
+            # 使用disk_info.py模块直接验证盘符分配
+            print(f"验证磁盘 {disk_number} 上的分区盘符 {c_letter} 是否分配成功...")
             
-            if not other_partition_result:
-                print("错误: 其他分区创建失败")
+            # 等待2秒钟，以便系统有足够时间识别新创建的分区
+            import time
+            time.sleep(2)
+            
+            try:
+                # 导入DiskManager类
+                from disk_info import DiskManager
+                
+                # 创建磁盘管理器实例
+                disk_manager = DiskManager()
+                
+                # 获取指定磁盘的信息
+                disk_info = disk_manager.get_disk_by_index(disk_number)
+                
+                if disk_info is None:
+                    print(f"验证失败: 未找到磁盘编号为 {disk_number} 的磁盘信息。")
+                    return False
+                
+                # 检查该磁盘是否包含指定的盘符
+                drive_letters = disk_info.drive_letters
+                
+                # 处理"Unknown"情况
+                if drive_letters == "Unknown":
+                    print(f"验证失败: 磁盘 {disk_number} 的盘符信息未知。")
+                    return False
+                
+                # 将盘符字符串拆分为列表（盘符可能以逗号分隔）
+                if drive_letters:
+                    assigned_letters = [l.strip() for l in drive_letters.split(',')]
+                else:
+                    assigned_letters = []
+                
+                # 检查指定的盘符是否在该磁盘的盘符列表中
+                if c_letter in assigned_letters:
+                    print(f"验证成功: 磁盘 {disk_number} 已成功分配盘符 {c_letter}。")
+                    # 输出磁盘详细信息用于日志记录
+                    print(f"  磁盘名称: {disk_info.name}")
+                    print(f"  磁盘容量: {disk_info.capacity}")
+                    print(f"  分配的所有盘符: {drive_letters}")
+                    print(f"  分区表格式: {disk_info.partition_style}")
+                    print(f"磁盘 {disk_number} 分区初始化完成")
+                    return True
+                else:
+                    print(f"验证失败: 磁盘 {disk_number} 未分配盘符 {c_letter}。")
+                    print(f"  磁盘 {disk_number} 当前分配的盘符: {drive_letters}")
+                    print(f"  预期盘符: {c_letter}")
+                    print(f"磁盘 {disk_number} 分区验证失败")
+                    return False
+                    
+            except ImportError as e:
+                print(f"验证过程中发生错误: 导入disk_info模块失败 {e}")
+                print("请确保disk_info.py文件存在于同一目录下")
                 return False
-            print("其他分区创建成功")
+            except Exception as e:
+                print(f"验证过程中发生错误: {e}")
+                print(f"磁盘编号: {disk_number}, 预期盘符: {c_letter}")
+                return False
         else:
-            print("没有需要创建的其他分区")
-        
-        # 4. 验证分区创建成功
-        print("验证分区创建结果...")
-        
-        # 验证分区列表
-        verify_commands = [
-            f"select disk {disk_number}",
-            "list partition"
-        ]
-        
-        verify_result = execute_diskpart_command(verify_commands, capture_output=True)
-        if not verify_result:
-            print("错误: 无法验证分区创建结果")
-            return False
-        
-        # 分析分区创建结果
-        print("分区创建成功验证:")
-        print(verify_result)
-        
-        # 简单的分区数量验证
-        partition_count = verify_result.count("Partition")
-        
-        expected_partitions = 0
-        if c_size is not None and c_letter is not None:
-            expected_partitions += 1
-        if d_letter is not None:
-            expected_partitions += 1  
-        if e_letter is not None:
-            expected_partitions += 1
-        
-        if expected_partitions > 0 and partition_count >= expected_partitions:
-            print(f"分区验证通过：检测到 {partition_count} 个分区（预期 {expected_partitions} 个）")
-        elif expected_partitions == 0:
-            print("未创建任何分区，基础GPT初始化完成")
-        else:
-            print(f"警告: 分区数量不匹配 - 预期: {expected_partitions}, 实际检测: {partition_count}")
-        
-        print(f"磁盘 {disk_number} 分区初始化完成")
-        return True
-        
+            print("没有指定C分区的大小或盘符，不执行任何分区操作。")
+            # 如果没有提供C分区信息，我们认为操作是“成功”的，因为没有任务需要执行
+            return True
+
     except PermissionError as e:
         print(f"权限错误: {e}")
         return False
@@ -426,6 +415,9 @@ def initialize_disk_to_partitioning_C (disk_number, c_size= None, c_letter=None)
     except Exception as e:
         print(f"磁盘分区初始化过程中发生错误: {e}")
         return False
+
+
+
 
 def is_admin():
     """
@@ -490,3 +482,6 @@ def execute_diskpart_command(commands, capture_output=False):
     except Exception as e:
         print(f"错误: 执行DiskPart命令时发生异常: {e}")
         return False
+
+
+
