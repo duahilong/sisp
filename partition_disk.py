@@ -418,7 +418,7 @@ def initialize_disk_to_partitioning_C (disk_number, c_size= None, c_letter=None)
         return False
 
 
-def initialize_disk_to_partitioning_D(disk_number, d_letter=None, efi_size=100, c_size=None):
+def initialize_disk_to_partitioning_D(disk_number, d_letter=None, efi_size=None, c_size=None):
     """
     创建NTFS的D分区
     
@@ -552,11 +552,13 @@ def initialize_disk_to_partitioning_D(disk_number, d_letter=None, efi_size=100, 
                 
                 if d_letter in assigned_letters:
                     print(f"验证成功: 磁盘 {disk_number} 已成功分配盘符 {d_letter}。")
+                    # 验证成功后，直接返回True，结束函数
+                    return True
                 else:
                     print(f"验证失败: 磁盘 {disk_number} 未分配盘符 {d_letter}。")
-                print(f"  磁盘 {disk_number} 当前分配的盘符: {drive_letters}")
-                print(f"  预期盘符: {d_letter}")
-                return False
+                    print(f"  磁盘 {disk_number} 当前分配的盘符: {drive_letters}")
+                    print(f"  预期盘符: {d_letter}")
+                    return False
                     
             except ImportError as e:
                 print(f"验证过程中发生错误: 导入disk_info模块失败 {e}")
