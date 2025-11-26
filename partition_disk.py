@@ -287,7 +287,7 @@ def initialize_disk_to_gpt(disk_number, efi_size=None, efi_letter=None,):
         return False
 
 
-def initialize_disk_to_partitioning (disk_number, c_size= None, c_letter=None, d_letter=None, e_letter=None):
+def initialize_disk_to_partitioning_C (disk_number, c_size= None, c_letter=None):
     """
     初始化磁盘为GPT格式并创建必要的分区
     
