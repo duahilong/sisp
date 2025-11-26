@@ -302,16 +302,13 @@ def initialize_disk_to_partitioning_C (disk_number, c_size= None, c_letter=None)
     """
     try:
         # 1. 检查管理员权限
-        print("检查管理员权限...")
         if not is_admin():
-            print("错误: 当前用户没有管理员权限，磁盘分区操作需要管理员权限")
+            error_msg = f"权限检查失败: 当前用户没有管理员权限，磁盘分区操作需要管理员权限 (磁盘编号: {disk_number})"
+            print(error_msg)
             raise PermissionError("磁盘分区操作需要管理员权限")
         print("管理员权限验证通过")
         
         # 2. 验证传入参数正确
-        print("验证输入参数...")
-        
-        # 使用现有的 validate_input_parameters 函数进行参数验证
         validation_result = validate_input_parameters(
             disk_number=disk_number,
             c_size=c_size,
@@ -319,7 +316,8 @@ def initialize_disk_to_partitioning_C (disk_number, c_size= None, c_letter=None)
         )
         
         if not validation_result:
-            print("错误: 参数验证失败，磁盘分区初始化终止")
+            error_msg = f"参数验证失败: 磁盘编号={disk_number}, C分区大小={c_size}, C分区盘符={c_letter}"
+            print(error_msg)
             return False
         
         
@@ -327,7 +325,6 @@ def initialize_disk_to_partitioning_C (disk_number, c_size= None, c_letter=None)
         print(f"开始为磁盘 {disk_number} 创建分区...")
 
         if c_size is not None and c_letter is not None:
-            print("创建C分区...")
             c_partition_commands = [
                 f"select disk {disk_number}",
                 f"create partition primary size={c_size}",
@@ -337,15 +334,12 @@ def initialize_disk_to_partitioning_C (disk_number, c_size= None, c_letter=None)
 
             c_partition_result = execute_diskpart_command(c_partition_commands)
             if not c_partition_result:
-                print("错误: C分区创建失败")
+                error_msg = f"C分区创建失败: 磁盘 {disk_number}，大小 {c_size}MB，盘符 {c_letter}"
+                print(error_msg)
                 return False
             print("C分区创建成功")
 
             # 4. 验证C分区创建成功
-            # 使用disk_info.py模块直接验证盘符分配
-            print(f"验证磁盘 {disk_number} 上的分区盘符 {c_letter} 是否分配成功...")
-            
-            # 等待2秒钟，以便系统有足够时间识别新创建的分区
             import time
             time.sleep(2)
             
@@ -360,7 +354,8 @@ def initialize_disk_to_partitioning_C (disk_number, c_size= None, c_letter=None)
                 disk_info = disk_manager.get_disk_by_index(disk_number)
                 
                 if disk_info is None:
-                    print(f"验证失败: 未找到磁盘编号为 {disk_number} 的磁盘信息。")
+                    error_msg = f"磁盘验证失败: 未找到磁盘编号为 {disk_number} 的磁盘信息"
+                    print(error_msg)
                     return False
                 
                 # 检查该磁盘是否包含指定的盘符
@@ -368,7 +363,8 @@ def initialize_disk_to_partitioning_C (disk_number, c_size= None, c_letter=None)
                 
                 # 处理"Unknown"情况
                 if drive_letters == "Unknown":
-                    print(f"验证失败: 磁盘 {disk_number} 的盘符信息未知。")
+                    error_msg = f"盘符验证失败: 磁盘 {disk_number} 的盘符信息未知，可能分区未正确创建"
+                    print(error_msg)
                     return False
                 
                 # 将盘符字符串拆分为列表（盘符可能以逗号分隔）
@@ -379,28 +375,20 @@ def initialize_disk_to_partitioning_C (disk_number, c_size= None, c_letter=None)
                 
                 # 检查指定的盘符是否在该磁盘的盘符列表中
                 if c_letter in assigned_letters:
-                    print(f"验证成功: 磁盘 {disk_number} 已成功分配盘符 {c_letter}。")
-                    # 输出磁盘详细信息用于日志记录
-                    print(f"  磁盘名称: {disk_info.name}")
-                    print(f"  磁盘容量: {disk_info.capacity}")
-                    print(f"  分配的所有盘符: {drive_letters}")
-                    print(f"  分区表格式: {disk_info.partition_style}")
                     print(f"磁盘 {disk_number} 分区初始化完成")
                     return True
                 else:
-                    print(f"验证失败: 磁盘 {disk_number} 未分配盘符 {c_letter}。")
-                    print(f"  磁盘 {disk_number} 当前分配的盘符: {drive_letters}")
-                    print(f"  预期盘符: {c_letter}")
-                    print(f"磁盘 {disk_number} 分区验证失败")
+                    error_msg = f"盘符验证失败: 磁盘 {disk_number} 未分配预期盘符 {c_letter}，实际盘符: {drive_letters}"
+                    print(error_msg)
                     return False
                     
             except ImportError as e:
-                print(f"验证过程中发生错误: 导入disk_info模块失败 {e}")
-                print("请确保disk_info.py文件存在于同一目录下")
+                error_msg = f"验证模块导入失败: 无法导入disk_info模块 ({e})，请确保disk_info.py文件存在于同一目录下"
+                print(error_msg)
                 return False
             except Exception as e:
-                print(f"验证过程中发生错误: {e}")
-                print(f"磁盘编号: {disk_number}, 预期盘符: {c_letter}")
+                error_msg = f"盘符验证过程异常: 磁盘编号={disk_number}, 预期盘符={c_letter}, 错误详情={str(e)}"
+                print(error_msg)
                 return False
         else:
             print("没有指定C分区的大小或盘符，不执行任何分区操作。")
@@ -408,13 +396,18 @@ def initialize_disk_to_partitioning_C (disk_number, c_size= None, c_letter=None)
             return True
 
     except PermissionError as e:
-        print(f"权限错误: {e}")
+        error_msg = f"权限错误 [位置: 管理员权限检查]: {e}"
+        print(error_msg)
         return False
     except ValueError as e:
-        print(f"参数错误: {e}")
+        error_msg = f"参数错误 [位置: 参数验证] (磁盘编号: {disk_number}, C大小: {c_size}, C盘符: {c_letter}): {e}"
+        print(error_msg)
         return False
     except Exception as e:
-        print(f"磁盘分区初始化过程中发生错误: {e}")
+        import traceback
+        error_msg = f"C分区初始化异常 [位置: 磁盘分区过程] (磁盘编号: {disk_number}): {e}"
+        print(error_msg)
+        print(f"详细错误信息: {traceback.format_exc()}")
         return False
 
 
