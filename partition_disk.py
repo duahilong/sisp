@@ -311,15 +311,18 @@ def initialize_disk_to_partitioning_C (disk_number, c_size= None, c_letter=None)
         # 2. 验证传入参数正确
         validation_result = validate_input_parameters(
             disk_number=disk_number,
-            c_size=c_size,
-            c_letter=c_letter
+            d_letter=d_letter,
+            e_letter=None,      # 移除E分区参数
+            efi_size=efi_size,  # 添加efi_size参数验证
+            efi_letter=None,
+            c_size=c_size,      # 添加c_size参数验证
+            c_letter=None
         )
         
         if not validation_result:
-            error_msg = f"参数验证失败: 磁盘编号={disk_number}, C分区大小={c_size}, C分区盘符={c_letter}"
+            error_msg = f"参数验证失败: 磁盘编号={disk_number}, D分区盘符={d_letter}, EFI大小={efi_size}, C分区大小={c_size}"
             print(error_msg)
             return False
-        
         
         # 3. 构建diskpart命令
         print(f"开始为磁盘 {disk_number} 创建分区...")
@@ -344,13 +347,8 @@ def initialize_disk_to_partitioning_C (disk_number, c_size= None, c_letter=None)
             time.sleep(2)
             
             try:
-                # 导入DiskManager类
                 from disk_info import DiskManager
-                
-                # 创建磁盘管理器实例
                 disk_manager = DiskManager()
-                
-                # 获取指定磁盘的信息
                 disk_info = disk_manager.get_disk_by_index(disk_number)
                 
                 if disk_info is None:
@@ -358,22 +356,18 @@ def initialize_disk_to_partitioning_C (disk_number, c_size= None, c_letter=None)
                     print(error_msg)
                     return False
                 
-                # 检查该磁盘是否包含指定的盘符
                 drive_letters = disk_info.drive_letters
                 
-                # 处理"Unknown"情况
                 if drive_letters == "Unknown":
                     error_msg = f"盘符验证失败: 磁盘 {disk_number} 的盘符信息未知，可能分区未正确创建"
                     print(error_msg)
                     return False
                 
-                # 将盘符字符串拆分为列表（盘符可能以逗号分隔）
                 if drive_letters:
                     assigned_letters = [l.strip() for l in drive_letters.split(',')]
                 else:
                     assigned_letters = []
                 
-                # 检查指定的盘符是否在该磁盘的盘符列表中
                 if c_letter in assigned_letters:
                     print(f"磁盘 {disk_number} 分区初始化完成")
                     return True
@@ -426,16 +420,13 @@ def initialize_disk_to_partitioning_D(disk_number, d_letter=None, efi_size=None,
     """
     try:
         # 1. 检查管理员权限
-        print("检查管理员权限...")
         if not is_admin():
-            print("错误: 当前用户没有管理员权限，磁盘分区操作需要管理员权限")
+            error_msg = f"权限检查失败: 当前用户没有管理员权限，磁盘分区操作需要管理员权限 (磁盘编号: {disk_number})"
+            print(error_msg)
             raise PermissionError("磁盘分区操作需要管理员权限")
         print("管理员权限验证通过")
         
         # 2. 验证传入参数正确
-        print("验证输入参数...")
-        
-        # 使用现有的 validate_input_parameters 函数进行参数验证
         validation_result = validate_input_parameters(
             disk_number=disk_number,
             d_letter=d_letter,
@@ -447,80 +438,75 @@ def initialize_disk_to_partitioning_D(disk_number, d_letter=None, efi_size=None,
         )
         
         if not validation_result:
-            print("错误: 参数验证失败，磁盘分区初始化终止")
+            error_msg = f"参数验证失败: 磁盘编号={disk_number}, D分区盘符={d_letter}, EFI大小={efi_size}, C分区大小={c_size}"
+            print(error_msg)
             return False
         
-        # 3. 计算分区大小
-        print(f"计算磁盘 {disk_number} 的D分区大小...")
-        
-        # 获取磁盘总容量
-        try:
-            from disk_info import DiskManager
-            disk_manager = DiskManager()
-            disk_info = disk_manager.get_disk_by_index(disk_number)
-            
-            if disk_info is None:
-                print(f"错误: 未找到磁盘编号为 {disk_number} 的磁盘信息。")
-                return False
-            
-            # 解析磁盘容量并直接转换为整数MB（格式为 "XX.XX GB"）
-            disk_capacity_str = disk_info.capacity.replace("GB", "").strip()
-            
-            # 直接解析为浮点数后立即转换为整数MB，避免浮点精度问题
-            disk_capacity_gb = float(disk_capacity_str)
-            total_disk_capacity_int = int(disk_capacity_gb * 1024)  # 1GB = 1024MB，立即转换为整数
-            
-            print(f"磁盘 {disk_number} 总容量: {disk_capacity_gb:.2f} GB ({total_disk_capacity_int} MB)")
-            
-            # 验证EFI分区大小
-            if efi_size is None or efi_size <= 0:
-                print(f"错误: EFI分区大小必须为正整数。")
-                return False
-            
-            # 确保所有计算参数都是整数
-            efi_size_int = int(efi_size)
-            print(f"EFI分区大小: {efi_size_int} MB")
-            
-            if c_size is not None:
-                c_size_int = int(c_size)
-                print(f"C分区大小: {c_size_int} MB")
-            else:
-                # 如果没有指定C分区大小，则报错
-                print(f"错误: 必须指定C分区大小才能计算D分区大小。请提供c_size参数。")
-                return False
-            
-            # 计算D分区的大小 (确保结果是整数)
-            # D分区的大小 = 总容量 - EFI大小 - C大小
-            d_size = total_disk_capacity_int - efi_size_int - c_size_int
-            
-            print(f"磁盘总容量: {total_disk_capacity_int} MB (整数)")
-            print(f"D分区大小: {d_size} MB (整数)")
-            
-        except Exception as e:
-            print(f"错误: 获取磁盘信息或计算分区大小失败: {e}")
-            return False
-            
-        # 4. 构建diskpart命令
-        print(f"开始为磁盘 {disk_number} 创建D分区...")
+        # 3. 构建diskpart命令
+        print(f"开始为磁盘 {disk_number} 创建分区...")
 
         # 处理D分区创建
-        if d_letter is not None:
-            print(f"创建D分区...")
+        if d_letter is not None and c_size is not None:
+            # 计算D分区大小
+            try:
+                from disk_info import DiskManager
+                disk_manager = DiskManager()
+                disk_info = disk_manager.get_disk_by_index(disk_number)
+                
+                if disk_info is None:
+                    error_msg = f"磁盘信息获取失败: 未找到磁盘编号为 {disk_number} 的磁盘信息"
+                    print(error_msg)
+                    return False
+                
+                # 解析磁盘容量并转换为MB
+                disk_capacity_str = disk_info.capacity.replace("GB", "").strip()
+                disk_capacity_gb = float(disk_capacity_str)
+                total_disk_capacity_int = int(disk_capacity_gb * 1024)
+                
+                # 验证分区大小参数
+                if efi_size is None or efi_size <= 0:
+                    error_msg = f"参数验证失败: EFI分区大小必须为正整数 (磁盘编号: {disk_number})"
+                    print(error_msg)
+                    return False
+                
+                if c_size <= 0:
+                    error_msg = f"参数验证失败: C分区大小必须为正整数 (磁盘编号: {disk_number})"
+                    print(error_msg)
+                    return False
+                
+                # 计算D分区大小
+                calculated_d_size = total_disk_capacity_int - int(efi_size) - int(c_size)
+                d_size = calculated_d_size // 2  # 将计算出的D分区大小除以2
+                
+                # 打印计算出的D分区大小
+                print(f"D分区大小: {d_size} MB")
+                
+                if d_size <= 0:
+                    error_msg = f"分区大小计算失败: 计算出的D分区大小无效 ({d_size} MB)，请检查EFI和C分区大小参数 (磁盘编号: {disk_number})"
+                    print(error_msg)
+                    return False
+                    
+            except Exception as e:
+                error_msg = f"分区大小计算异常 (磁盘编号: {disk_number}): {str(e)}"
+                print(error_msg)
+                return False
+            
             d_partition_commands = [
                 f"select disk {disk_number}",
-                f"create partition primary size={int(d_size)}",  # 添加计算得出的分区大小
+                f"create partition primary size={int(d_size)}",
                 "format quick fs=ntfs override",
                 f"assign letter={d_letter}"
             ]
 
             d_partition_result = execute_diskpart_command(d_partition_commands)
             if not d_partition_result:
-                print("错误: D分区创建失败")
+                error_msg = f"D分区创建失败: 磁盘 {disk_number}，大小 {d_size}MB，盘符 {d_letter}"
+                print(error_msg)
                 return False
             print("D分区创建成功")
             
-            # 验证D分区创建成功
-            print(f"验证磁盘 {disk_number} 上的分区盘符 {d_letter} 是否分配成功...")
+            # 4. 验证D分区创建成功
+            import time
             time.sleep(2)
             
             try:
@@ -529,13 +515,15 @@ def initialize_disk_to_partitioning_D(disk_number, d_letter=None, efi_size=None,
                 disk_info = disk_manager.get_disk_by_index(disk_number)
                 
                 if disk_info is None:
-                    print(f"验证失败: 未找到磁盘编号为 {disk_number} 的磁盘信息。")
+                    error_msg = f"磁盘验证失败: 未找到磁盘编号为 {disk_number} 的磁盘信息"
+                    print(error_msg)
                     return False
                 
                 drive_letters = disk_info.drive_letters
                 
                 if drive_letters == "Unknown":
-                    print(f"验证失败: 磁盘 {disk_number} 的盘符信息未知。")
+                    error_msg = f"盘符验证失败: 磁盘 {disk_number} 的盘符信息未知，可能分区未正确创建"
+                    print(error_msg)
                     return False
                 
                 if drive_letters:
@@ -544,52 +532,40 @@ def initialize_disk_to_partitioning_D(disk_number, d_letter=None, efi_size=None,
                     assigned_letters = []
                 
                 if d_letter in assigned_letters:
-                    print(f"验证成功: 磁盘 {disk_number} 已成功分配盘符 {d_letter}。")
-                    # 验证成功后，直接返回True，结束函数
+                    print(f"磁盘 {disk_number} 分区初始化完成")
                     return True
                 else:
-                    print(f"验证失败: 磁盘 {disk_number} 未分配盘符 {d_letter}。")
-                    print(f"  磁盘 {disk_number} 当前分配的盘符: {drive_letters}")
-                    print(f"  预期盘符: {d_letter}")
+                    error_msg = f"盘符验证失败: 磁盘 {disk_number} 未分配预期盘符 {d_letter}，实际盘符: {drive_letters}"
+                    print(error_msg)
                     return False
                     
             except ImportError as e:
-                print(f"验证过程中发生错误: 导入disk_info模块失败 {e}")
-                print("请确保disk_info.py文件存在于同一目录下")
+                error_msg = f"验证模块导入失败: 无法导入disk_info模块 ({e})，请确保disk_info.py文件存在于同一目录下"
+                print(error_msg)
                 return False
             except Exception as e:
-                print(f"验证过程中发生错误: {e}")
-                print(f"磁盘编号: {disk_number}, 预期盘符: {d_letter}")
+                error_msg = f"盘符验证过程异常: 磁盘编号={disk_number}, 预期盘符={d_letter}, 错误详情={str(e)}"
+                print(error_msg)
                 return False
 
-        # 如果没有指定D分区盘符
-        if d_letter is None:
-            print("没有指定D分区的盘符，不执行任何分区操作。")
+        # 如果没有指定D分区盘符或C分区大小
+        if d_letter is None or c_size is None:
+            print("没有指定D分区的盘符或C分区大小，不执行任何分区操作。")
             return True
-        
-        # 输出最终的磁盘信息
-        try:
-            disk_manager = DiskManager()
-            disk_info = disk_manager.get_disk_by_index(disk_number)
-            if disk_info:
-                print(f"  磁盘名称: {disk_info.name}")
-                print(f"  磁盘容量: {disk_info.capacity}")
-                print(f"  分配的所有盘符: {disk_info.drive_letters}")
-                print(f"  分区表格式: {disk_info.partition_style}")
-        except:
-            pass  # 忽略信息获取失败的情况
-        
-        print(f"磁盘 {disk_number} D分区初始化完成")
-        return True
 
     except PermissionError as e:
-        print(f"权限错误: {e}")
+        error_msg = f"权限错误 [位置: 管理员权限检查]: {e}"
+        print(error_msg)
         return False
     except ValueError as e:
-        print(f"参数错误: {e}")
+        error_msg = f"参数错误 [位置: 参数验证] (磁盘编号: {disk_number}, D盘符: {d_letter}, EFI大小: {efi_size}, C大小: {c_size}): {e}"
+        print(error_msg)
         return False
     except Exception as e:
-        print(f"磁盘分区初始化过程中发生错误: {e}")
+        import traceback
+        error_msg = f"D分区初始化异常 [位置: 磁盘分区过程] (磁盘编号: {disk_number}): {e}"
+        print(error_msg)
+        print(f"详细错误信息: {traceback.format_exc()}")
         return False
 
 
@@ -656,6 +632,7 @@ def execute_diskpart_command(commands, capture_output=False):
     except Exception as e:
         print(f"错误: 执行DiskPart命令时发生异常: {e}")
         return False
+
 
 
 
