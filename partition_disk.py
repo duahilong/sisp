@@ -569,6 +569,112 @@ def initialize_disk_to_partitioning_D(disk_number, d_letter=None, efi_size=None,
         return False
 
 
+def initialize_disk_to_partitioning_E(disk_number, e_letter=None):
+    """
+    创建NTFS的E分区，使用所有剩余空间
+    
+    Args:
+        disk_number (int): 磁盘编号
+        e_letter (str, optional): E分区盘符，默认None
+        
+    Returns:
+        bool: 初始化成功返回True，失败返回False
+    """
+    try:
+        # 1. 检查管理员权限
+        if not is_admin():
+            error_msg = f"权限检查失败: 当前用户没有管理员权限，磁盘分区操作需要管理员权限 (磁盘编号: {disk_number})"
+            print(error_msg)
+            raise PermissionError("磁盘分区操作需要管理员权限")
+        print("管理员权限验证通过")
+        
+        # 2. 验证传入参数正确
+        if e_letter is None:
+            error_msg = f"参数验证失败: E分区盘符不能为空 (磁盘编号: {disk_number})"
+            print(error_msg)
+            return False
+        
+        if not isinstance(e_letter, str) or len(e_letter) != 1 or not e_letter.isalpha():
+            error_msg = f"参数验证失败: E分区盘符必须是单个字母 (磁盘编号: {disk_number}, 盘符: {e_letter})"
+            print(error_msg)
+            return False
+        
+        # 3. 构建diskpart命令
+        print(f"开始为磁盘 {disk_number} 创建分区...")
+
+        e_partition_commands = [
+            f"select disk {disk_number}",
+            "create partition primary ",
+            "format quick fs=ntfs override",
+            f"assign letter={e_letter}"
+        ]
+
+        e_partition_result = execute_diskpart_command(e_partition_commands)
+        if not e_partition_result:
+            error_msg = f"E分区创建失败: 磁盘 {disk_number}，盘符 {e_letter}"
+            print(error_msg)
+            return False
+        print("E分区创建成功")
+        
+        # 4. 验证E分区创建成功
+        import time
+        time.sleep(2)
+        
+        try:
+            from disk_info import DiskManager
+            disk_manager = DiskManager()
+            disk_info = disk_manager.get_disk_by_index(disk_number)
+            
+            if disk_info is None:
+                error_msg = f"磁盘验证失败: 未找到磁盘编号为 {disk_number} 的磁盘信息"
+                print(error_msg)
+                return False
+            
+            drive_letters = disk_info.drive_letters
+            
+            if drive_letters == "Unknown":
+                error_msg = f"盘符验证失败: 磁盘 {disk_number} 的盘符信息未知，可能分区未正确创建"
+                print(error_msg)
+                return False
+            
+            if drive_letters:
+                assigned_letters = [l.strip() for l in drive_letters.split(',')]
+            else:
+                assigned_letters = []
+            
+            if e_letter in assigned_letters:
+                print(f"磁盘 {disk_number} 分区初始化完成")
+                return True
+            else:
+                error_msg = f"盘符验证失败: 磁盘 {disk_number} 未分配预期盘符 {e_letter}，实际盘符: {drive_letters}"
+                print(error_msg)
+                return False
+                
+        except ImportError as e:
+            error_msg = f"验证模块导入失败: 无法导入disk_info模块 ({e})，请确保disk_info.py文件存在于同一目录下"
+            print(error_msg)
+            return False
+        except Exception as e:
+            error_msg = f"盘符验证过程异常: 磁盘编号={disk_number}, 预期盘符={e_letter}, 错误详情={str(e)}"
+            print(error_msg)
+            return False
+
+    except PermissionError as e:
+        error_msg = f"权限错误 [位置: 管理员权限检查]: {e}"
+        print(error_msg)
+        return False
+    except ValueError as e:
+        error_msg = f"参数错误 [位置: 参数验证] (磁盘编号: {disk_number}, E盘符: {e_letter}): {e}"
+        print(error_msg)
+        return False
+    except Exception as e:
+        import traceback
+        error_msg = f"E分区初始化异常 [位置: 磁盘分区过程] (磁盘编号: {disk_number}): {e}"
+        print(error_msg)
+        print(f"详细错误信息: {traceback.format_exc()}")
+        return False
+
+
 def is_admin():
     """
     检查当前是否以管理员权限运行
