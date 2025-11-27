@@ -309,18 +309,15 @@ def initialize_disk_to_partitioning_C (disk_number, c_size= None, c_letter=None)
         print("管理员权限验证通过")
         
         # 2. 验证传入参数正确
-        validation_result = validate_input_parameters(
-            disk_number=disk_number,
-            d_letter=d_letter,
-            e_letter=None,      # 移除E分区参数
-            efi_size=efi_size,  # 添加efi_size参数验证
-            efi_letter=None,
-            c_size=c_size,      # 添加c_size参数验证
-            c_letter=None
-        )
+        # 验证c_size参数
+        if c_size is not None and (not isinstance(c_size, int) or c_size <= 0):
+            error_msg = f"参数验证失败: C分区大小必须是正整数 (磁盘编号: {disk_number}, 大小: {c_size})"
+            print(error_msg)
+            return False
         
-        if not validation_result:
-            error_msg = f"参数验证失败: 磁盘编号={disk_number}, D分区盘符={d_letter}, EFI大小={efi_size}, C分区大小={c_size}"
+        # 验证c_letter参数
+        if c_letter is not None and (not isinstance(c_letter, str) or len(c_letter) != 1 or not c_letter.isalpha()):
+            error_msg = f"参数验证失败: C分区盘符必须是单个字母 (磁盘编号: {disk_number}, 盘符: {c_letter})"
             print(error_msg)
             return False
         
