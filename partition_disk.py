@@ -4,6 +4,7 @@ import os
 import string
 import tempfile
 import time
+import traceback
 from disk_info import DiskManager
 
 def validate_input_parameters(disk_number, efi_size=None, efi_letter=None, c_size=None, c_letter=None, d_letter=None, e_letter=None):
@@ -199,7 +200,6 @@ def initialize_disk_to_gpt(disk_number, efi_size=None, efi_letter=None,):
         
         # 使用disk_info模块验证磁盘格式
         try:
-            from disk_info import DiskManager
             disk_manager = DiskManager()
             partition_style = disk_manager._get_partition_style(disk_number)
             
@@ -340,11 +340,9 @@ def initialize_disk_to_partitioning_C (disk_number, c_size= None, c_letter=None)
             print("C分区创建成功")
 
             # 4. 验证C分区创建成功
-            import time
             time.sleep(2)
             
             try:
-                from disk_info import DiskManager
                 disk_manager = DiskManager()
                 disk_info = disk_manager.get_disk_by_index(disk_number)
                 
@@ -395,7 +393,6 @@ def initialize_disk_to_partitioning_C (disk_number, c_size= None, c_letter=None)
         print(error_msg)
         return False
     except Exception as e:
-        import traceback
         error_msg = f"C分区初始化异常 [位置: 磁盘分区过程] (磁盘编号: {disk_number}): {e}"
         print(error_msg)
         print(f"详细错误信息: {traceback.format_exc()}")
@@ -446,7 +443,6 @@ def initialize_disk_to_partitioning_D(disk_number, d_letter=None, efi_size=None,
         if d_letter is not None and c_size is not None:
             # 计算D分区大小
             try:
-                from disk_info import DiskManager
                 disk_manager = DiskManager()
                 disk_info = disk_manager.get_disk_by_index(disk_number)
                 
@@ -503,11 +499,9 @@ def initialize_disk_to_partitioning_D(disk_number, d_letter=None, efi_size=None,
             print("D分区创建成功")
             
             # 4. 验证D分区创建成功
-            import time
             time.sleep(2)
             
             try:
-                from disk_info import DiskManager
                 disk_manager = DiskManager()
                 disk_info = disk_manager.get_disk_by_index(disk_number)
                 
@@ -559,7 +553,6 @@ def initialize_disk_to_partitioning_D(disk_number, d_letter=None, efi_size=None,
         print(error_msg)
         return False
     except Exception as e:
-        import traceback
         error_msg = f"D分区初始化异常 [位置: 磁盘分区过程] (磁盘编号: {disk_number}): {e}"
         print(error_msg)
         print(f"详细错误信息: {traceback.format_exc()}")
@@ -614,11 +607,9 @@ def initialize_disk_to_partitioning_E(disk_number, e_letter=None):
         print("E分区创建成功")
         
         # 4. 验证E分区创建成功
-        import time
         time.sleep(2)
         
         try:
-            from disk_info import DiskManager
             disk_manager = DiskManager()
             disk_info = disk_manager.get_disk_by_index(disk_number)
             
@@ -665,7 +656,6 @@ def initialize_disk_to_partitioning_E(disk_number, e_letter=None):
         print(error_msg)
         return False
     except Exception as e:
-        import traceback
         error_msg = f"E分区初始化异常 [位置: 磁盘分区过程] (磁盘编号: {disk_number}): {e}"
         print(error_msg)
         print(f"详细错误信息: {traceback.format_exc()}")
