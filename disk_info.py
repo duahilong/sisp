@@ -188,7 +188,7 @@ def print_disk_info(data: List[List[Any]]) -> None:
         return
 
     headers = ["Index", "Drive Name", "Capacity", "Drive Letter", "Partition Style"]
-    maxcolwidths = [8, 45, 12, 8, 20]
+    maxcolwidths = [8, 60, 20, 15, 25]
 
     print(tabulate(data, headers=headers, tablefmt="simple_grid", 
                    maxcolwidths=maxcolwidths, colalign=("center", "left", "left", "left", "left")))
