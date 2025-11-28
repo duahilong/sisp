@@ -1,10 +1,12 @@
-import subprocess
-import wmi
 import os
 import string
+import subprocess
 import tempfile
 import time
 import traceback
+
+import wmi
+
 from disk_info import DiskManager
 
 def validate_input_parameters(disk_number, efi_size=None, efi_letter=None, c_size=None, c_letter=None, d_letter=None, e_letter=None):
