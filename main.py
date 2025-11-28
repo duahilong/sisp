@@ -24,7 +24,6 @@ _JSON_CACHE = {}
 _JSON_CACHE_TIME = {}
 _JSON_SCHEMA_VALIDATION = True
 
-
 def parse_arguments():
     """
     解析命令行参数
@@ -66,15 +65,39 @@ def validate_json_schema(data: Any) -> bool:
     Returns:
         bool: 是否符合预期结构
     """
-    # 基本的schema验证
-    if isinstance(data, dict):
-        # 检查是否包含常见的配置项
-        common_keys = ['disk_number', 'partition_style', 'volume_label', 'settings']
-        return any(key in data for key in common_keys)
-    elif isinstance(data, list):
-        return len(data) > 0  # 非空列表
-    else:
-        return True  # 其他类型默认通过
+    # 更严格和具体的schema验证
+    if not isinstance(data, dict):
+        print("  - 错误: JSON根元素不是一个字典。")
+        return False
+
+    # 检查基本配置项
+    required_keys = ['disk_number', 'partition_style']
+    for key in required_keys:
+        if key not in data:
+            print(f"  - 警告: 缺少必需的配置项 '{key}'。")
+            # return False # 可以选择严格要求，但目前只警告
+
+    # 进一步检查 'disk_number' 类型和范围
+    if 'disk_number' in data:
+        dn = data['disk_number']
+        if not isinstance(dn, int) or not (1 <= dn <= 10):
+            print(f"  - 警告: 'disk_number' 必须是 1-10 之间的整数，当前为 {dn}。")
+
+    # 进一步检查 'partition_style' 类型
+    if 'partition_style' in data and not isinstance(data['partition_style'], str):
+        print(f"  - 警告: 'partition_style' 必须是字符串，当前为 {type(data['partition_style']).__name__}。")
+
+    # 检查 'settings' 结构
+    if 'settings' in data:
+        settings = data['settings']
+        if not isinstance(settings, dict):
+            print("  - 警告: 'settings' 配置项不是一个字典。")
+        else:
+            # 示例: 检查 'settings' 下的子项
+            if 'create_partitions' in settings and not isinstance(settings['create_partitions'], bool):
+                print("  - 警告: 'settings.create_partitions' 必须是布尔值。")
+
+    return True # 如果没有致命错误，则认为通过
 
 
 def get_config_value(key_path: str, default: Any = None) -> Any:
@@ -222,9 +245,11 @@ def read_json_config(json_file_path: str, use_cache: bool = True,
         
         # 步骤6: Schema验证（可选）
         # 检查JSON数据结构是否符合预期
-        if validate_schema and not validate_json_schema(config_data):
-            # 暂时移除警告信息，仅保留成功读取的简洁输出
-            pass  # 什么都不做，只是让程序继续执行
+        if validate_schema:
+            if not validate_json_schema(config_data):
+                print(f"⚠️ 警告: JSON文件 '{json_file_path}' 的结构不完全符合预期。")
+            else:
+                print(f"✅ JSON文件 '{json_file_path}' 结构验证通过。")
         
         # 步骤7: 更新缓存
         if use_cache:
@@ -415,8 +440,8 @@ def main():
                 print(f"X JSON配置文件读取失败，程序退出。")
                 return
         else:
-            print("ℹ️  未指定JSON配置文件，使用默认配置")
-            JSON_CONFIG_DATA = {}
+            print("ℹ️  未指定JSON配置文件，使用默认配置，JSON_CONFIG_DATA 将为空字典。")
+            JSON_CONFIG_DATA = {} # 确保在没有JSON文件时也是一个空字典
         
         # 首先获取并显示磁盘信息
         disk_data = get_disk_info()
