@@ -115,7 +115,7 @@ def clear_json_cache():
     global _JSON_CACHE, _JSON_CACHE_TIME
     _JSON_CACHE.clear()
     _JSON_CACHE_TIME.clear()
-    print("🗑️ JSON缓存已清空")
+    print("JSON缓存已清空")
 
 
 def get_cache_info() -> Dict[str, Any]:
@@ -146,10 +146,16 @@ def read_json_config(json_file_path: str, use_cache: bool = True,
     """
     高性能读取并解析JSON配置文件
     
+    主要功能：
+    1. 读取JSON配置文件
+    2. 验证文件格式和结构
+    3. 支持缓存机制提高性能
+    4. 提供详细的错误信息和处理
+    
     Args:
         json_file_path: JSON文件路径
-        use_cache: 是否使用缓存机制
-        validate_schema: 是否进行schema验证
+        use_cache: 是否使用缓存机制（避免重复读取同一文件）
+        validate_schema: 是否进行schema验证（检查JSON结构是否符合预期）
         
     Returns:
         解析后的JSON数据，失败时返回None
@@ -158,38 +164,43 @@ def read_json_config(json_file_path: str, use_cache: bool = True,
         FileNotFoundError: 当文件不存在时抛出
         json.JSONDecodeError: 当JSON格式错误时抛出
     """
-    start_time = time.time()
+    start_time = time.time()  # 记录开始时间，用于性能统计
     
     try:
-        # 获取绝对路径
+        # 步骤1: 路径处理
+        # 获取绝对路径（包含完整目录路径），这样可以避免相对路径的问题
         abs_path = os.path.abspath(json_file_path)
         
-        # 检查缓存
+        # 步骤2: 检查缓存机制
+        # 如果启用缓存且文件已缓存，检查文件是否发生变化
         if use_cache and abs_path in _JSON_CACHE:
-            file_mtime = os.path.getmtime(abs_path)
+            file_mtime = os.path.getmtime(abs_path)  # 获取文件修改时间
+            # 如果缓存时间与文件修改时间一致，说明文件未变化
             if abs_path in _JSON_CACHE_TIME and _JSON_CACHE_TIME[abs_path] == file_mtime:
-                print(f"⚡ 从缓存读取JSON配置: {json_file_path}")
-                return _JSON_CACHE[abs_path]
+                print(f"从缓存读取JSON配置: {json_file_path}")
+                return _JSON_CACHE[abs_path]  # 直接返回缓存数据，避免重复读取
         
-        # 验证文件存在性
+        # 步骤3: 验证文件存在性
         if not os.path.exists(abs_path):
             raise FileNotFoundError(f"JSON文件不存在: {json_file_path}")
         
-        # 文件大小和类型验证
+        # 步骤4: 验证文件大小和类型
         file_size = os.path.getsize(abs_path)
         if file_size == 0:
             raise ValueError("JSON文件为空")
-        elif file_size > 50 * 1024 * 1024:  # 50MB限制，提高限制
+        elif file_size > 50 * 1024 * 1024:  # 50MB限制
             raise ValueError(f"JSON文件过大: {file_size / (1024*1024):.2f}MB")
         
-        # 检查文件扩展名
+        # 检查文件扩展名（纯格式检查，不是硬性要求）
         if not abs_path.lower().endswith(('.json', '.jsonc', '.json5')):
-            print(f"⚠️  警告: 文件扩展名不是标准的JSON格式: {json_file_path}")
+            print(f"警告: 文件扩展名不是标准的JSON格式: {json_file_path}")
         
-        # 读取并解析JSON文件（添加重试机制）
+        # 步骤5: 读取并解析JSON文件
+        # 添加重试机制，处理可能的临时读取错误
         max_retries = 3
         for attempt in range(max_retries):
             try:
+                # 读取文件内容（使用utf-8编码）
                 with open(abs_path, 'r', encoding='utf-8') as file:
                     content = file.read()
                     
@@ -197,53 +208,57 @@ def read_json_config(json_file_path: str, use_cache: bool = True,
                 if not content.strip():
                     raise ValueError("JSON文件内容为空或只包含空白字符")
                 
-                # 解析JSON（支持注释的JSON）
+                # 解析JSON字符串为Python对象（字典或列表）
                 config_data = json.loads(content)
-                break
+                break  # 解析成功，退出重试循环
                 
             except json.JSONDecodeError as e:
+                # 如果是最后一次尝试，抛出异常
                 if attempt == max_retries - 1:
                     raise
+                # 否则打印重试信息并等待一下
                 print(f"JSON解析重试 {attempt + 1}/{max_retries}: {e}")
-                time.sleep(0.1)
+                time.sleep(0.1)  # 等待100毫秒后重试
         
-        # Schema验证
+        # 步骤6: Schema验证（可选）
+        # 检查JSON数据结构是否符合预期
         if validate_schema and not validate_json_schema(config_data):
-            print("⚠️  警告: JSON数据结构不符合常见配置格式")
+            # 暂时移除警告信息，仅保留成功读取的简洁输出
+            pass  # 什么都不做，只是让程序继续执行
         
-        # 更新缓存
+        # 步骤7: 更新缓存
         if use_cache:
-            _JSON_CACHE[abs_path] = config_data
-            _JSON_CACHE_TIME[abs_path] = os.path.getmtime(abs_path)
+            _JSON_CACHE[abs_path] = config_data  # 缓存文件内容
+            _JSON_CACHE_TIME[abs_path] = os.path.getmtime(abs_path)  # 缓存文件修改时间
         
-        # 成功反馈
-        elapsed_time = time.time() - start_time
-        print(f"✅ 成功读取JSON配置文件: {json_file_path}")
-        print(f"📄 文件大小: {file_size / 1024:.2f} KB | 解析时间: {elapsed_time:.3f}s")
+        # 步骤8: 成功反馈
+        # 显示JSON文件中的description字段值，如果没有description则回退到文件名
+        if config_data and 'description' in config_data:
+            print(f"成功读取JSON配置文件: {config_data['description']}")
+        else:
+            print(f"成功读取JSON配置文件: {json_file_path}")
         
-        # 详细的数据结构分析
-        analyze_json_structure(config_data)
         
-        return config_data
+        return config_data  # 返回解析后的JSON数据
         
     except FileNotFoundError as e:
-        print(f"❌ 文件错误: {e}")
+        print(f"X 文件错误: {e}")
         return None
     except json.JSONDecodeError as e:
-        print(f"❌ JSON格式错误: {e}")
+        print(f"X JSON格式错误: {e}")
         print("   建议检查:")
         print("   - 字符串是否用双引号包围")
         print("   - 末尾逗号和不必要的逗号")
         print("   - 转义字符是否正确")
         return None
     except ValueError as e:
-        print(f"❌ 文件验证错误: {e}")
+        print(f"X 文件验证错误: {e}")
         return None
     except PermissionError as e:
-        print(f"❌ 权限错误: 无法读取文件 {json_file_path}")
+        print(f"X 权限错误: 无法读取文件 {json_file_path}")
         return None
     except Exception as e:
-        print(f"❌ 读取JSON文件时发生未知错误: {e}")
+        print(f"X 读取JSON文件时发生未知错误: {e}")
         return None
 
 
@@ -281,7 +296,7 @@ def analyze_json_structure(data: Any, max_depth: int = 3, current_depth: int = 0
             elif isinstance(value, dict):
                 print(f"{indent}  📁 {key}: {value_type}[{len(value)}]")
             else:
-                print(f"{indent}  📝 {key}: {value_type}")
+                print(f"{indent}  注释 {key}: {value_type}")
         
         if len(keys) > 5:
             print(f"{indent}  ... 还有 {len(keys) - 5} 个其他键值")
@@ -305,7 +320,7 @@ def analyze_json_structure(data: Any, max_depth: int = 3, current_depth: int = 0
                 sample_keys = list(sample_item.keys())[:3]
                 print(f"{indent}  主要键值: {', '.join(sample_keys)}")
     else:
-        print(f"{indent}📝 {type(data).__name__}: {data}")
+        print(f"{indent}注释 {type(data).__name__}: {data}")
 
 
 def input_user(disk_number=None):
@@ -395,18 +410,13 @@ def main():
         # 检查是否需要读取JSON配置文件
         global JSON_CONFIG_DATA
         if args.json:
-            print("🔍 正在读取JSON配置文件...")
             JSON_CONFIG_DATA = read_json_config(args.json)
             if JSON_CONFIG_DATA is None:
-                print("❌ JSON配置文件读取失败，程序退出。")
+                print(f"X JSON配置文件读取失败，程序退出。")
                 return
-            
-            print("✨ JSON配置数据已加载到全局变量 JSON_CONFIG_DATA")
-            print("-" * 60)
         else:
             print("ℹ️  未指定JSON配置文件，使用默认配置")
             JSON_CONFIG_DATA = {}
-            print("-" * 60)
         
         # 首先获取并显示磁盘信息
         disk_data = get_disk_info()
@@ -428,21 +438,8 @@ def main():
             return
         
         print(f"已选择磁盘编号: {USER_DISK_NUMBER}")
-        
-        # 如果有JSON配置数据，显示可用的配置信息
-        if JSON_CONFIG_DATA and isinstance(JSON_CONFIG_DATA, dict):
-            print("📋 当前可用的配置项:")
-            for key, value in JSON_CONFIG_DATA.items():
-                if isinstance(value, (str, int, float)):
-                    print(f"   {key}: {value}")
-                elif isinstance(value, list):
-                    print(f"   {key}: [列表，包含{len(value)}项]")
-                elif isinstance(value, dict):
-                    print(f"   {key}: {{字典，包含{len(value)}项}}")
-                else:
-                    print(f"   {key}: {type(value).__name__}")
-            
-            print("\n💡 您可以在其他函数中通过访问 JSON_CONFIG_DATA 变量来使用这些配置数据")
+        print("=" * 60)
+        print(JSON_CONFIG_DATA['description'])
             
     except ValueError as e:
         print(f"输入错误: {e}")

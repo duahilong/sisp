@@ -1,6 +1,6 @@
 {
+    "description" : "Windows 11 配置",
     "GOH" : 11,
     "efi_size" : 150,
     "c_size" : 153600
-
 }
