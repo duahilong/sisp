@@ -11,6 +11,10 @@ get_user_disknumber.py - 用户磁盘编号输入处理模块
 import re
 from typing import List, Union
 
+# 预编译正则表达式模式 - 提升性能
+# 用于分割逗号和空格分隔的磁盘编号输入
+SPLIT_PATTERN = re.compile(r'[,\s]+')
+
 
 def parse_disk_input(input_str: str) -> List[int]:
     """
@@ -43,8 +47,8 @@ def parse_disk_input(input_str: str) -> List[int]:
     
     # 检查是否包含逗号或空格分隔的多个项目 (如: 1,3,5 或 1 3 5 或 1,3-5,6 或 1 3-5 6)
     if ',' in input_str or ' ' in input_str:
-        # 先按逗号分割，再按空格分割
-        items = re.split(r'[,\s]+', input_str)
+        # 使用预编译的正则表达式分割，提高性能
+        items = SPLIT_PATTERN.split(input_str)
         for item in items:
             item = item.strip()
             if not item:
