@@ -10,17 +10,11 @@ import argparse
 import json
 import os
 import time
-import re
-from typing import Any, Dict, Optional, Union, List, Tuple
+from typing import Any, Dict, List, Optional
 from disk_info import get_disk_info, print_disk_info
+from get_user_disknumber import input_user
 
-# 全局变量，用于存储用户输入的磁盘编号列表
-USER_DISK_NUMBER = []
-
-# 全局变量，用于存储读取的JSON配置数据
-JSON_CONFIG_DATA = None
-
-# JSON配置缓存
+# JSON配置缓存 - 这个保留，因为它是真正的缓存机制
 _JSON_CACHE = {}
 _JSON_CACHE_TIME = {}
 
@@ -58,27 +52,28 @@ def parse_arguments():
 
 
 
-def get_config_value(key_path: str, default: Any = None) -> Any:
+def get_config_value(config_data: Dict[str, Any], key_path: str, default: Any = None) -> Any:
     """
     安全获取配置值的函数
     
     Args:
+        config_data: JSON配置数据字典
         key_path: 支持点分隔的路径，如 'disk.number'
         default: 默认值
         
     Returns:
         配置值或默认值
     """
-    if not JSON_CONFIG_DATA:
+    if not config_data:
         return default
     
     # 处理简单的键访问
     if '.' not in key_path:
-        return JSON_CONFIG_DATA.get(key_path, default)
+        return config_data.get(key_path, default)
     
     # 处理嵌套路径访问
     keys = key_path.split('.')
-    current = JSON_CONFIG_DATA
+    current = config_data
     
     try:
         for key in keys:
@@ -122,6 +117,92 @@ def get_cache_info() -> Dict[str, Any]:
     }
 
 
+def _validate_json_file_path(file_path: str) -> str:
+    """验证并处理JSON文件路径
+    
+    Args:
+        file_path: JSON文件路径
+        
+    Returns:
+        处理后的绝对路径
+        
+    Raises:
+        FileNotFoundError: 文件不存在
+        ValueError: 文件为空或过大
+    """
+    abs_path = os.path.abspath(file_path)
+    
+    if not os.path.exists(abs_path):
+        raise FileNotFoundError(f"JSON文件不存在: {file_path}")
+    
+    file_size = os.path.getsize(abs_path)
+    if file_size == 0:
+        raise ValueError("JSON文件为空")
+    elif file_size > 50 * 1024 * 1024:  # 50MB限制
+        raise ValueError(f"JSON文件过大: {file_size / (1024*1024):.2f}MB")
+    
+    return abs_path
+
+
+def _check_cache(abs_path: str) -> Optional[Dict[str, Any]]:
+    """检查缓存
+    
+    Args:
+        abs_path: 文件绝对路径
+        
+    Returns:
+        缓存的数据，如果缓存未命中则返回None
+    """
+    if abs_path in _JSON_CACHE and abs_path in _JSON_CACHE_TIME:
+        file_mtime = os.path.getmtime(abs_path)
+        if _JSON_CACHE_TIME[abs_path] == file_mtime:
+            print(f"从缓存读取JSON配置: {abs_path}")
+            return _JSON_CACHE[abs_path]
+    return None
+
+
+def _read_and_parse_json(abs_path: str, max_retries: int = 3) -> Dict[str, Any]:
+    """读取并解析JSON文件
+    
+    Args:
+        abs_path: 文件绝对路径
+        max_retries: 最大重试次数
+        
+    Returns:
+        解析后的JSON数据
+        
+    Raises:
+        json.JSONDecodeError: JSON解析错误
+        ValueError: 文件内容为空或无效
+    """
+    for attempt in range(max_retries):
+        try:
+            with open(abs_path, 'r', encoding='utf-8') as file:
+                content = file.read()
+                
+            if not content.strip():
+                raise ValueError("JSON文件内容为空或只包含空白字符")
+            
+            return json.loads(content)
+            
+        except json.JSONDecodeError as e:
+            if attempt == max_retries - 1:
+                raise
+            print(f"JSON解析重试 {attempt + 1}/{max_retries}: {e}")
+            time.sleep(0.1)
+
+
+def _update_cache(abs_path: str, config_data: Dict[str, Any]) -> None:
+    """更新缓存
+    
+    Args:
+        abs_path: 文件绝对路径
+        config_data: 配置数据
+    """
+    _JSON_CACHE[abs_path] = config_data
+    _JSON_CACHE_TIME[abs_path] = os.path.getmtime(abs_path)
+
+
 def read_json_config(json_file_path: str, use_cache: bool = True, 
                     validate_schema: bool = True) -> Optional[Dict[str, Any]]:
     """
@@ -140,87 +221,35 @@ def read_json_config(json_file_path: str, use_cache: bool = True,
         
     Returns:
         解析后的JSON数据，失败时返回None
-        
-    Raises:
-        FileNotFoundError: 当文件不存在时抛出
-        json.JSONDecodeError: 当JSON格式错误时抛出
     """
-    start_time = time.time()  # 记录开始时间，用于性能统计
-    
     try:
-        # 步骤1: 路径处理
-        # 获取绝对路径（包含完整目录路径），这样可以避免相对路径的问题
-        abs_path = os.path.abspath(json_file_path)
+        # 验证文件路径
+        abs_path = _validate_json_file_path(json_file_path)
         
-        # 步骤2: 检查缓存机制
-        # 如果启用缓存且文件已缓存，检查文件是否发生变化
-        if use_cache and abs_path in _JSON_CACHE:
-            file_mtime = os.path.getmtime(abs_path)  # 获取文件修改时间
-            # 如果缓存时间与文件修改时间一致，说明文件未变化
-            if abs_path in _JSON_CACHE_TIME and _JSON_CACHE_TIME[abs_path] == file_mtime:
-                print(f"从缓存读取JSON配置: {json_file_path}")
-                return _JSON_CACHE[abs_path]  # 直接返回缓存数据，避免重复读取
-        
-        # 步骤3: 验证文件存在性
-        if not os.path.exists(abs_path):
-            raise FileNotFoundError(f"JSON文件不存在: {json_file_path}")
-        
-        # 步骤4: 验证文件大小和类型
-        file_size = os.path.getsize(abs_path)
-        if file_size == 0:
-            raise ValueError("JSON文件为空")
-        elif file_size > 50 * 1024 * 1024:  # 50MB限制
-            raise ValueError(f"JSON文件过大: {file_size / (1024*1024):.2f}MB")
-        
-        # 检查文件扩展名（纯格式检查，不是硬性要求）
+        # 检查文件扩展名
         if not abs_path.lower().endswith(('.json', '.jsonc', '.json5')):
             print(f"警告: 文件扩展名不是标准的JSON格式: {json_file_path}")
         
-        # 步骤5: 读取并解析JSON文件
-        # 添加重试机制，处理可能的临时读取错误
-        max_retries = 3
-        for attempt in range(max_retries):
-            try:
-                # 读取文件内容（使用utf-8编码）
-                with open(abs_path, 'r', encoding='utf-8') as file:
-                    content = file.read()
-                    
-                # 检查JSON是否为空或只有空白字符
-                if not content.strip():
-                    raise ValueError("JSON文件内容为空或只包含空白字符")
-                
-                # 解析JSON字符串为Python对象（字典或列表）
-                config_data = json.loads(content)
-                break  # 解析成功，退出重试循环
-                
-            except json.JSONDecodeError as e:
-                # 如果是最后一次尝试，抛出异常
-                if attempt == max_retries - 1:
-                    raise
-                # 否则打印重试信息并等待一下
-                print(f"JSON解析重试 {attempt + 1}/{max_retries}: {e}")
-                time.sleep(0.1)  # 等待100毫秒后重试
-        
-        # # 步骤6: Schema验证（可选）
-        # # 注意：validate_json_schema函数已被移除，此处不再进行结构验证
-        # if validate_schema:
-        #     print(f"ℹ️  注意: JSON结构验证功能已被禁用。")
-        
-        # 步骤7: 更新缓存
+        # 检查缓存
         if use_cache:
-            _JSON_CACHE[abs_path] = config_data  # 缓存文件内容
-            _JSON_CACHE_TIME[abs_path] = os.path.getmtime(abs_path)  # 缓存文件修改时间
+            cached_data = _check_cache(abs_path)
+            if cached_data is not None:
+                return cached_data
         
-        # 步骤8: 成功反馈
-        # 显示JSON文件中的description字段值，如果没有description则回退到文件名
+        # 读取并解析JSON
+        config_data = _read_and_parse_json(abs_path)
+        
+        # 更新缓存
+        if use_cache:
+            _update_cache(abs_path, config_data)
+        
+        # 显示成功信息
         if config_data and 'description' in config_data:
-            description = config_data.get('description', '未指定配置描述')
-            print(f"成功读取JSON配置文件: {description}")
+            print(f"成功读取JSON配置文件: {config_data['description']}")
         else:
             print(f"成功读取JSON配置文件: {json_file_path}")
         
-        
-        return config_data  # 返回解析后的JSON数据
+        return config_data
         
     except FileNotFoundError as e:
         print(f"X 文件错误: {e}")
@@ -304,274 +333,101 @@ def analyze_json_structure(data: Any, max_depth: int = 3, current_depth: int = 0
         print(f"{indent}注释 {type(data).__name__}: {data}")
 
 
-def input_user(disk_number=None):
-    """
-    获取用户输入的硬盘编号（支持命令行参数或交互式输入）
+def setup_json_config(args: argparse.Namespace) -> Dict[str, Any]:
+    """设置并读取JSON配置文件
     
     Args:
-        disk_number (int/str, optional): 通过命令行传入的磁盘编号
+        args: 命令行参数对象，包含json字段
         
     Returns:
-        List[int]: 用户选择的有效磁盘编号列表
-        
-    Raises:
-        ValueError: 当磁盘编号超出有效范围时抛出
+        读取的JSON配置数据字典，如果失败则返回空字典
     """
-    if disk_number is not None:
-        # 命令行参数模式
-        return validate_disk_input(disk_number)
+    if args.json:
+        config_data = read_json_config(args.json)
+        if config_data is None:
+            print("X JSON配置文件读取失败，程序退出。")
+            return {}
+        else:
+            return config_data
     else:
-        # 交互式输入模式
-        return interactive_input()
+        print("ℹ️  未指定JSON配置文件，使用默认配置。")
+        return {}
 
 
-def parse_disk_input(input_str: str) -> List[int]:
-    """
-    解析磁盘编号输入字符串，支持多种格式
-    
-    Args:
-        input_str: 输入字符串，支持以下格式：
-                  - 单个数字: "3"
-                  - 范围: "1-3", "3-6"
-                  - 多个数字: "1,3,5" 或 "1 3 5"
-                  - 混合格式: "1,3-5,6" 或 "1 3-5 6" (数字+范围)
-                  - 字母a: "a" (表示全部1-6)
+def display_disk_information() -> Optional[List[Dict[str, Any]]]:
+    """获取并显示磁盘信息
     
     Returns:
-        List[int]: 解析后的磁盘编号列表
-        
-    Raises:
-        ValueError: 当输入格式不正确或超出范围时抛出
+        磁盘数据列表，如果获取失败则返回None
     """
-    if not input_str or not input_str.strip():
-        raise ValueError("输入不能为空")
+    disk_data = get_disk_info()
     
-    input_str = input_str.strip().lower()
-    
-    # 处理字母'a'表示全部
-    if input_str == 'a' or input_str == 'all':
-        return list(range(1, 7))  # 1-6
-    
-    result = set()  # 使用set避免重复
-    
-    # 检查是否包含逗号或空格分隔的多个项目 (如: 1,3,5 或 1 3 5 或 1,3-5,6 或 1 3-5 6)
-    if ',' in input_str or ' ' in input_str:
-        # 先按逗号分割，再按空格分割
-        items = re.split(r'[,\s]+', input_str)
-        for item in items:
-            item = item.strip()
-            if not item:
-                continue
-            
-            # 检查是否是范围格式 (如: 3-5)
-            if '-' in item:
-                try:
-                    start_str, end_str = item.split('-', 1)
-                    start = int(start_str.strip())
-                    end = int(end_str.strip())
-                    
-                    if start > end:
-                        raise ValueError(f"范围起始值不能大于结束值: {start}-{end}")
-                    
-                    if start < 1 or end > 6:
-                        raise ValueError(f"磁盘编号必须在 1-6 范围内，您输入的是: {start}-{end}")
-                    
-                    # 添加范围内的所有数字
-                    result.update(range(start, end + 1))
-                    
-                except ValueError as e:
-                    if "invalid literal" in str(e):
-                        raise ValueError(f"范围格式错误 '{item}'，请使用 '开始-结束' 格式，如: 1-3")
-                    raise
-            else:
-                # 单个数字
-                try:
-                    num = int(item)
-                    if num < 1 or num > 6:
-                        raise ValueError(f"磁盘编号必须在 1-6 范围内，您输入的是: {num}")
-                    result.add(num)
-                except ValueError as e:
-                    if "invalid literal" in str(e):
-                        raise ValueError(f"无效的数字: '{item}'")
-                    raise
-    
-    # 检查是否是范围格式 (如: 1-3，没有逗号)
-    elif '-' in input_str:
-        try:
-            start_str, end_str = input_str.split('-', 1)
-            start = int(start_str.strip())
-            end = int(end_str.strip())
-            
-            if start > end:
-                raise ValueError(f"范围起始值不能大于结束值: {start}-{end}")
-            
-            if start < 1 or end > 6:
-                raise ValueError(f"磁盘编号必须在 1-6 范围内，您输入的是: {start}-{end}")
-            
-            # 添加范围内的所有数字
-            result.update(range(start, end + 1))
-            
-        except ValueError as e:
-            if "invalid literal" in str(e):
-                raise ValueError(f"范围格式错误，请使用 '开始-结束' 格式，如: 1-3")
-            raise
-    
-    # 尝试单个数字
+    if disk_data:
+        print_disk_info(disk_data)
+        print()
+        return disk_data
     else:
-        try:
-            num = int(input_str)
-            if num < 1 or num > 6:
-                raise ValueError(f"磁盘编号必须在 1-6 范围内，您输入的是: {num}")
-            result.add(num)
-        except ValueError as e:
-            if "invalid literal" in str(e):
-                raise ValueError(f"请输入有效的数字、范围(1-3)、多个数字(1,3,5)或字母a")
-            raise
-    
-    return sorted(list(result))
+        print("未找到任何磁盘信息。")
+        return None
 
 
-def validate_disk_numbers(disk_numbers: List[int]) -> List[int]:
-    """
-    验证磁盘编号列表
+def handle_user_input(disk_arg: Optional[str]) -> Optional[List[int]]:
+    """处理用户磁盘编号输入
     
     Args:
-        disk_numbers: 磁盘编号列表
+        disk_arg: 命令行传递的磁盘编号参数
         
     Returns:
-        List[int]: 验证通过的磁盘编号列表
-        
-    Raises:
-        ValueError: 当磁盘编号超出有效范围时抛出
+        解析后的磁盘编号列表，如果失败则返回None
     """
-    if not disk_numbers:
-        raise ValueError("没有有效的磁盘编号")
+    disk_numbers = input_user(disk_arg)
     
-    # 验证每个编号都在有效范围内
-    for num in disk_numbers:
-        if not isinstance(num, int) or num < 1 or num > 6:
-            raise ValueError(f"磁盘编号必须在 1-6 范围内，错误编号: {num}")
+    if disk_numbers is None:
+        print("未选择有效的磁盘编号，程序退出。")
+        return None
     
     return disk_numbers
 
 
-def validate_disk_input(disk_input: Union[int, str]) -> List[int]:
-    """
-    验证磁盘编号输入（支持单个数字或字符串格式）
+def display_selection_results(disk_numbers: List[int], config_data: Dict[str, Any]) -> None:
+    """显示用户选择的结果
     
     Args:
-        disk_input: 磁盘编号输入（可以是整数或字符串）
-        
-    Returns:
-        List[int]: 验证通过的磁盘编号列表
-        
-    Raises:
-        ValueError: 当磁盘编号超出有效范围时抛出
+        disk_numbers: 磁盘编号列表
+        config_data: JSON配置数据
     """
-    if isinstance(disk_input, int):
-        # 兼容原来的整数输入
-        disk_numbers = [disk_input]
-    elif isinstance(disk_input, str):
-        # 解析新的字符串格式
-        disk_numbers = parse_disk_input(disk_input)
+    if len(disk_numbers) == 1:
+        print(f"已选择磁盘编号: {disk_numbers[0]}")
     else:
-        raise ValueError("磁盘编号必须是整数或字符串")
+        print(f"已选择磁盘编号: {', '.join(map(str, disk_numbers))}")
     
-    return validate_disk_numbers(disk_numbers)
-
-
-def interactive_input():
-    """
-    交互式输入模式（支持多种输入格式）
-    
-    支持的输入格式：
-    - 单个数字：3
-    - 数字范围：1-3, 3-6
-    - 多个数字：1,3,5
-    - 字母 a：表示全部(1-6)
-    - 0：退出
-    
-    Returns:
-        List[int]: 用户选择的有效磁盘编号列表
-    """
-    try:
-        # 获取用户输入（更新提示信息）
-        while True:
-            try:
-                user_input = input("请输入磁盘编号（单个数字3、范围1-3、多个数字1,3,5或1 3 5、字母a表示全部，0退出）：").strip()
-                
-                # 允许用户退出
-                if user_input == '0':
-                    return None
-                
-                # 解析用户输入
-                disk_numbers = parse_disk_input(user_input)
-                
-                if not disk_numbers:
-                    print("没有解析到有效的磁盘编号，请重新输入。")
-                    continue
-                
-                return disk_numbers
-                    
-            except ValueError as e:
-                print(f"输入错误: {e}")
-                print("支持的格式：单个数字(3)、范围(1-3)、多个数字(1,3,5或1 3 5)、字母a(全部)，0退出")
-            except KeyboardInterrupt:
-                return None
-            except Exception as e:
-                print(f"解析输入时发生错误: {e}")
-                
-    except Exception as e:
-        print(f"获取磁盘信息时发生错误: {e}")
-        return None
+    print("=" * 60)
+    description = config_data.get('description', '未指定配置描述')
+    print(description)
+    print(*disk_numbers)
 
 
 def main():
-    """主函数：先显示磁盘信息，然后获取用户输入"""
+    """主函数：协调各个子功能模块"""
     try:
         # 解析命令行参数
         args = parse_arguments()
         
-        # 检查是否需要读取JSON配置文件
-        global JSON_CONFIG_DATA
-        if args.json:
-            JSON_CONFIG_DATA = read_json_config(args.json)
-            if JSON_CONFIG_DATA is None:
-                print(f"X JSON配置文件读取失败，程序退出。")
-                return
-        else:
-            print("ℹ️  未指定JSON配置文件，使用默认配置，JSON_CONFIG_DATA 将为空字典。")
-            JSON_CONFIG_DATA = {} # 确保在没有JSON文件时也是一个空字典
+        # 设置JSON配置
+        config_data = setup_json_config(args)
         
-        # 首先获取并显示磁盘信息
-        disk_data = get_disk_info()
-        
-        if disk_data:
-            # 显示所有磁盘（保持原有表格格式）
-            print_disk_info(disk_data)
-            print()  # 添加空行分隔
-        else:
-            print("未找到任何磁盘信息。")
+        # 显示磁盘信息
+        disk_data = display_disk_information()
+        if disk_data is None:
             return
         
-        # 处理磁盘编号输入
-        global USER_DISK_NUMBER
-        USER_DISK_NUMBER = input_user(args.disk)
-        
-        if USER_DISK_NUMBER is None:
-            print("未选择有效的磁盘编号，程序退出。")
+        # 处理用户输入
+        disk_numbers = handle_user_input(args.disk)
+        if disk_numbers is None:
             return
         
-        # 显示用户选择的磁盘编号
-        if len(USER_DISK_NUMBER) == 1:
-            print(f"已选择磁盘编号: {USER_DISK_NUMBER[0]}")
-        else:
-            print(f"已选择磁盘编号: {', '.join(map(str, USER_DISK_NUMBER))}")
-        print("=" * 60)
-        # 安全地获取description，如果不存在则使用默认值
-        description = JSON_CONFIG_DATA.get('description', '未指定配置描述')
-        print(description)
-        print(*USER_DISK_NUMBER)
+        # 显示选择结果
+        display_selection_results(disk_numbers, config_data)
             
     except ValueError as e:
         print(f"输入错误: {e}")
