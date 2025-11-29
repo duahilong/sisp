@@ -1,6 +1,10 @@
 {
     "description" : "Windows 11 配置",
-    "GOH" : 11,
+    "win_gho" : 11,
     "efi_size" : 150,
-    "c_size" : 153600
+    "c_size" : 153600,
+    "software_file" : "",
+    "gho_exe" : "sw\\ghost64.exe",
+    "bcd_exe" : "sw\\bcdboot.exe",
+    "excluded_disk_names": ["Samsung SSD 980 PRO 1TB", "GXF-512 PRO"]
 }
