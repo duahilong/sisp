@@ -333,6 +333,7 @@ def analyze_json_structure(data: Any, max_depth: int = 3, current_depth: int = 0
         print(f"{indent}注释 {type(data).__name__}: {data}")
 
 
+<<<<<<< HEAD
 def setup_json_config(args: argparse.Namespace) -> Dict[str, Any]:
     """设置并读取JSON配置文件
     
@@ -407,6 +408,8 @@ def display_selection_results(disk_numbers: List[int], config_data: Dict[str, An
     print(*disk_numbers)
 
 
+=======
+>>>>>>> 91b5d89457a2f7c0f7243e05433691806a399b20
 def main():
     """主函数：协调各个子功能模块"""
     try:
