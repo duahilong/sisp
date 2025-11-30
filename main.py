@@ -371,19 +371,24 @@ def display_disk_information() -> Optional[List[Dict[str, Any]]]:
         return None
 
 
-def handle_user_input(disk_arg: Optional[str]) -> Optional[List[int]]:
+def handle_user_input(disk_arg: Optional[str], config_data: Dict[str, Any]) -> Optional[List[int]]:
     """处理用户磁盘编号输入
     
     Args:
         disk_arg: 命令行传递的磁盘编号参数
+        config_data: JSON配置数据，用于保护硬盘验证
         
     Returns:
         解析后的磁盘编号列表，如果失败则返回None
     """
-    disk_numbers = input_user(disk_arg)
+    disk_numbers = input_user(disk_arg, config_data)
     
     if disk_numbers is None:
         print("未选择有效的磁盘编号，程序退出。")
+        return None
+    
+    if not disk_numbers:
+        print("没有通过保护硬盘验证的磁盘，程序退出。")
         return None
     
     return disk_numbers
@@ -421,8 +426,8 @@ def main():
         if disk_data is None:
             return
         
-        # 处理用户输入
-        disk_numbers = handle_user_input(args.disk)
+        # 处理用户输入（传递配置数据进行保护硬盘验证）
+        disk_numbers = handle_user_input(args.disk, config_data)
         if disk_numbers is None:
             return
         
