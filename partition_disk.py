@@ -313,7 +313,7 @@ def initialize_disk_to_partitioning_C (disk_number, c_size= None, c_letter=None)
         # 2. 验证传入参数正确
         # 验证c_size参数
         if c_size is not None and (not isinstance(c_size, int) or c_size <= 0):
-            error_msg = f"参数验证失败: C分区大小必须是正整数 (磁盘编号: {disk_number}, 大小: {c_size})"
+            error_msg = f"参数验证失败: C分区大小必须是大于零且没有小数点的数字 (磁盘编号: {disk_number}, 大小: {c_size})"
             print(error_msg)
             return False
         

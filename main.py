@@ -13,7 +13,10 @@ import time
 from typing import Any, Dict, List, Optional
 from disk_info import get_disk_info, print_disk_info
 from get_user_disknumber import input_user
-from logic_processing import test_input
+from logic_processing import all_disk_partitions, test_input,process_disk_numbers
+
+
+
 
 
 
@@ -438,7 +441,9 @@ def main():
         # 显示选择结果
         display_selection_results(disk_numbers, config_data)
 
-        test_input(disk_numbers,config_data.get('gho_exe'),config_data.get('bcd_exe'),config_data.get('win_gho'),config_data.get('efi_size'),config_data.get('c_size'),config_data.get('software_file'))
+        process_disk_numbers(disk_numbers,config_data.get('efi_size'),config_data.get('c_size'))
+
+        # test_input(disk_numbers,config_data.get('gho_exe'),config_data.get('bcd_exe'),config_data.get('win_gho'),config_data.get('efi_size'),config_data.get('c_size'),config_data.get('software_file'))
 
     except ValueError as e:
         print(f"输入错误: {e}")
