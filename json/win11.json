@@ -1,6 +1,6 @@
 {
     "description" : "Windows 11 配置",
-    "win_gho" : 11,
+    "win_gho" : "img\\test.GHO",
     "efi_size" : 150,
     "c_size" : 153600,
     "software_file" : "",
