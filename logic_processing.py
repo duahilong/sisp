@@ -197,6 +197,88 @@ def process_disk_workflow(
         return False
 
 
+def process_multiple_disks(
+    disk_numbers: list[int], 
+    win_gho: str, 
+    efi_size: int, 
+    c_size: int,
+    gho_exe: str = "sw\\ghost64.exe"
+) -> dict:
+    """
+    批量处理多个磁盘的工作流程函数
+    
+    该函数可以同时处理多个磁盘，为每个磁盘执行完整的分区和镜像烧录流程。
+    
+    Args:
+        disk_numbers (list[int]): 磁盘编号列表，例如 [2, 3, 4]
+        win_gho (str): Windows镜像文件路径
+        efi_size (int): EFI分区大小（MB）
+        c_size (int): C分区大小（MB）
+        gho_exe (str, optional): Ghost可执行文件路径，默认使用 "sw\\ghost64.exe"
+    
+    Returns:
+        dict: 包含每个磁盘处理结果的字典，格式为 {磁盘编号: 成功状态}
+              例如: {2: True, 3: False, 4: True}
+        
+    Note:
+        - 每个磁盘独立处理，一个磁盘失败不会影响其他磁盘
+        - 盘符配置基于 number_list 中的预设值
+        - 函数会尝试处理所有指定的磁盘编号
+    """
+    
+    print(f"=== 开始批量处理 {len(disk_numbers)} 个磁盘 ===")
+    print(f"目标磁盘: {disk_numbers}")
+    print("=" * 60)
+    
+    # 存储每个磁盘的处理结果
+    results = {}
+    
+    for i, disk_number in enumerate(disk_numbers, 1):
+        print(f"\n🔄 [{i}/{len(disk_numbers)}] 开始处理磁盘 {disk_number}")
+        print("-" * 60)
+        
+        try:
+            # 调用单个磁盘处理函数
+            success = process_disk_workflow(
+                disk_number=disk_number,
+                win_gho=win_gho,
+                efi_size=efi_size,
+                c_size=c_size,
+                gho_exe=gho_exe
+            )
+            
+            # 记录结果
+            results[disk_number] = success
+            
+            if success:
+                print(f"✅ 磁盘 {disk_number} 处理成功")
+            else:
+                print(f"❌ 磁盘 {disk_number} 处理失败")
+                
+        except Exception as e:
+            print(f"❌ 磁盘 {disk_number} 处理时发生错误: {e}")
+            results[disk_number] = False
+    
+    # 打印批量处理总结
+    print("\n" + "=" * 60)
+    print("📊 批量处理总结:")
+    
+    success_count = sum(1 for result in results.values() if result)
+    total_count = len(results)
+    
+    print(f"总磁盘数: {total_count}")
+    print(f"成功数: {success_count}")
+    print(f"失败数: {total_count - success_count}")
+    print(f"成功率: {success_count/total_count*100:.1f}%")
+    
+    print("\n详细结果:")
+    for disk_num, result in results.items():
+        status = "✅ 成功" if result else "❌ 失败"
+        print(f"  磁盘 {disk_num}: {status}")
+    
+    return results
+
+
 def get_disk_config(disk_number: int) -> dict:
     """
     获取指定磁盘的完整配置信息
@@ -225,8 +307,8 @@ if __name__ == "__main__":
     print("🚀 磁盘处理工作流程 - 使用示例")
     print("=" * 60)
     
-    # 统一处理函数使用示例
-    print("🚀 统一处理函数使用示例")
+    # 示例1: 统一处理函数使用示例（单磁盘）
+    print("🚀 示例1: 统一处理函数使用示例（单磁盘）")
     print("处理磁盘3的完整流程...")
     
     # 调用统一的处理函数
@@ -241,10 +323,29 @@ if __name__ == "__main__":
     print(f"\n处理结果: {'🎉 成功' if success else '❌ 失败'}")
     
     print("\n" + "=" * 60)
+    
+    # 示例2: 批量处理多个磁盘
+    print("🚀 示例2: 批量处理多个磁盘")
+    print("同时处理磁盘2和磁盘3...")
+    
+    # 调用批量处理函数
+    results = process_multiple_disks(
+        disk_numbers=[2, 3],          # 磁盘编号列表（2个或以上）
+        win_gho="img\\test.GHO",   # Windows镜像文件路径
+        efi_size=512,                # EFI分区大小（MB）
+        c_size=50000,                # C分区大小（MB）
+        gho_exe="sw\\ghost64.exe"    # Ghost可执行文件路径（可选，默认值）
+    )
+    
+    print(f"\n批量处理结果: {results}")
+    
+    print("\n" + "=" * 60)
     print("📖 使用说明:")
-    print("1. 所有硬盘盘符信息都通过 get_disk_labels() 函数统一查询")
-    print("2. 只需指定 disk_number, win_gho, efi_size, c_size 四个必要参数")
-    print("3. gho_exe 参数可选，默认使用 'sw\\ghost64.exe'")
-    print("4. 当前置步骤失败时，后续步骤不会执行")
-    print("5. 函数返回 True 表示全部成功，False 表示有步骤失败")
-    print("6. 调用分区函数时，disk_number 会自动减1 (disk_number - 1)")
+    print("1. 单个磁盘处理: 使用 process_disk_workflow() 函数")
+    print("2. 多个磁盘处理: 使用 process_multiple_disks() 函数")
+    print("3. 所有硬盘盘符信息都通过 get_disk_labels() 函数统一查询")
+    print("4. 只需指定 disk_number/disk_numbers, win_gho, efi_size, c_size 四个必要参数")
+    print("5. gho_exe 参数可选，默认使用 'sw\\ghost64.exe'")
+    print("6. 当前置步骤失败时，后续步骤不会执行")
+    print("7. 调用分区函数时，disk_number 会自动减1 (disk_number - 1)")
+    print("8. 批量处理时，每个磁盘独立处理，失败不影响其他磁盘")
