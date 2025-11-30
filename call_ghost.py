@@ -12,7 +12,49 @@ import time
 from typing import Union
 
 
-def call_ghost(disk_number: Union[int, str], gho_exe: str, win_gho: str) -> bool:
+def validate_windows_folder(c_letter: str) -> bool:
+    """
+    验证指定盘符下是否存在Windows文件夹
+    
+    参数:
+        c_letter (str): 盘符字母，例如 "C:", "D:", "E:" 等
+    
+    返回:
+        bool: 如果找到Windows文件夹返回True，否则返回False
+    """
+    
+    # 确保盘符格式正确（以冒号结尾）
+    if not c_letter.endswith(':'):
+        c_letter = c_letter + ':'
+    
+    # 构建Windows文件夹路径
+    windows_path = os.path.join(c_letter, 'Windows')
+    
+    try:
+        # 检查Windows文件夹是否存在
+        if os.path.exists(windows_path) and os.path.isdir(windows_path):
+            # 额外验证：检查文件夹是否非空
+            try:
+                contents = os.listdir(windows_path)
+                if contents:
+                    print("系统验证成功")
+                    return True
+                else:
+                    print(f"未发现Windows文件夹: {windows_path}")
+                    return False
+            except PermissionError:
+                print(f"无法访问Windows文件夹: {windows_path}")
+                return False
+        else:
+            print(f"未发现Windows文件夹: {windows_path}")
+            return False
+            
+    except Exception as e:
+        print(f"验证Windows文件夹时发生错误: {e}")
+        return False
+
+
+def call_ghost(disk_number: Union[int, str], gho_exe: str, win_gho: str, c_letter: str) -> bool:
     """
     调用Ghost软件对指定硬盘进行镜像刻录
     
@@ -20,18 +62,24 @@ def call_ghost(disk_number: Union[int, str], gho_exe: str, win_gho: str) -> bool
         disk_number (int or str): 目标硬盘编号 (例如: 1, 2, 3等)
         gho_exe (str): Ghost可执行文件的相对路径
         win_gho (str): 需要刻录的镜像文件路径
+        c_letter (str): 验证的盘符字母，用于验证Windows文件夹是否存在
+                       例如: "C:", "D:"等。必需参数，不可为空
     
     返回:
-        bool: 如果Ghost软件成功执行完毕返回True，否则返回False
+        bool: 如果Ghost软件成功执行完毕且验证通过返回True，否则返回False
     
     异常:
         FileNotFoundError: 当Ghost可执行文件不存在时抛出
-        ValueError: 当参数格式不正确时抛出
+        ValueError: 当参数格式不正确或c_letter为空时抛出
     """
     
     # 参数验证
-    if not gho_exe or not win_gho:
-        raise ValueError("gho_exe和win_gho参数不能为空")
+    if not gho_exe or not win_gho or not c_letter:
+        raise ValueError("gho_exe、win_gho和c_letter参数都不能为空")
+    
+    # 验证c_letter参数格式
+    if not isinstance(c_letter, str) or len(c_letter.strip()) == 0:
+        raise ValueError("c_letter参数必须是有效的字符串，不能为空")
     
     if not isinstance(disk_number, (int, str)):
         raise ValueError("disk_number参数必须是整数或字符串类型")
@@ -47,13 +95,10 @@ def call_ghost(disk_number: Union[int, str], gho_exe: str, win_gho: str) -> bool
     try:
         # 构建Ghost命令
         # 格式: ghost.exe -clone,mode=pload,src=镜像文件:1,dst=硬盘编号:2 -sure -ntexact
-        gho_command = f'{gho_exe} -clone,mode=pload,src={win_gho}:1,dst={disk_number}:2 -sure -ntexact'
+        gho_command = f'{gho_exe} -clone,mode=pload,src={win_gho}:1,dst={disk_number}:1 -sure -ntexact'
         
-        print(f"正在启动Ghost软件...")
         print(f"执行命令: {gho_command}")
-        print(f"目标硬盘: {disk_number}")
         print(f"镜像文件: {win_gho}")
-        print(f"Ghost程序: {gho_exe}")
         
         # 启动Ghost进程
         # 使用shell=True来确保命令正确执行
@@ -77,49 +122,22 @@ def call_ghost(disk_number: Union[int, str], gho_exe: str, win_gho: str) -> bool
             
             # 检查进程返回码
             if process.returncode == 0:
-                print("Ghost软件执行成功!")
-                print("镜像刻录操作已完成")
+                # 进行Windows文件夹验证（c_letter现在是必需参数）
+                validation_result = validate_windows_folder(c_letter)
                 
-                # 如果有输出信息，也显示出来
-                if stdout:
-                    print("标准输出:")
-                    print(stdout)
-                    
-                if stderr:
-                    print("错误输出:")
-                    print(stderr)
-                
-                return True
+                if validation_result:
+                    return True
+                else:
+                    print(f"验证失败: {c_letter} 盘符下未发现Windows文件夹")
+                    return False
             else:
                 print(f"Ghost软件执行失败，返回码: {process.returncode}")
-                
-                if stdout:
-                    print("标准输出:")
-                    print(stdout)
-                    
-                if stderr:
-                    print("错误输出:")
-                    print(stderr)
-                    
                 return False
                 
         except subprocess.TimeoutExpired:
             # 超时处理
             print("Ghost软件执行超时(20分钟)，强制终止进程")
             process.kill()
-            
-            # 尝试获取剩余输出
-            try:
-                stdout, stderr = process.communicate(timeout=5)
-                if stdout:
-                    print("标准输出:")
-                    print(stdout)
-                if stderr:
-                    print("错误输出:")
-                    print(stderr)
-            except:
-                pass
-                
             return False
             
     except FileNotFoundError as e:
@@ -135,18 +153,20 @@ def call_ghost(disk_number: Union[int, str], gho_exe: str, win_gho: str) -> bool
 
 if __name__ == "__main__":
     """
-    测试代码示例 - 移除多余的测试调用，避免重复启动Ghost
+    测试代码示例 
     """
     # 测试参数
     test_disk_number = 3  # 根据你的规则，测试硬盘编号是3
     test_gho_exe = "sw\\ghost64.exe"
     test_win_gho = "img\\test.GHO"
+    c_letter = "U"
     
     print("=== Ghost软件调用测试 ===")
     
     try:
-        # 只测试一个版本，避免重复启动Ghost
-        result = call_ghost(test_disk_number, test_gho_exe, test_win_gho)
+        # 只测试一个版本
+        # 注意: c_letter现在是必需参数，这里使用U:作为示例
+        result = call_ghost(test_disk_number, test_gho_exe, test_win_gho, c_letter)
         print(f"测试结果: {'成功' if result else '失败'}")
         
     except Exception as e:
