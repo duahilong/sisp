@@ -197,6 +197,129 @@ def process_disk_workflow(
         return False
 
 
+def test_process_parameters(
+    disk_number: int, 
+    win_gho: str, 
+    efi_size: int, 
+    c_size: int,
+    gho_exe: str = "sw\\ghost64.exe"
+) -> dict:
+    """
+    测试函数：接收并打印所有传入的参数
+    
+    该函数用于调试和验证参数传递，确保所有参数都能正确接收和显示。
+    参数与 process_disk_workflow 函数保持一致。
+    
+    Args:
+        disk_number (int): 磁盘编号
+        win_gho (str): Windows镜像文件路径
+        efi_size (int): EFI分区大小（MB）
+        c_size (int): C分区大小（MB）
+        gho_exe (str, optional): Ghost可执行文件路径，默认使用 "sw\\ghost64.exe"
+    
+    Returns:
+        dict: 包含所有接收参数的字典
+        
+    Note:
+        - 该函数不会执行实际的磁盘操作
+        - 仅用于测试参数传递和验证参数格式
+    """
+    
+    print("🧪 测试函数：参数接收验证")
+    print("=" * 50)
+    
+    # 创建一个参数字典来存储和返回
+    parameters = {
+        "disk_number": disk_number,
+        "win_gho": win_gho,
+        "efi_size": efi_size,
+        "c_size": c_size,
+        "gho_exe": gho_exe
+    }
+    
+    # 打印所有参数
+    print("📋 接收到的参数详情:")
+    print(f"  磁盘编号 (disk_number): {disk_number} (类型: {type(disk_number).__name__})")
+    print(f"  镜像文件路径 (win_gho): '{win_gho}' (类型: {type(win_gho).__name__})")
+    print(f"  EFI分区大小 (efi_size): {efi_size}MB (类型: {type(efi_size).__name__})")
+    print(f"  C分区大小 (c_size): {c_size}MB (类型: {type(c_size).__name__})")
+    print(f"  Ghost程序路径 (gho_exe): '{gho_exe}' (类型: {type(gho_exe).__name__})")
+    
+    print("\n🔍 参数验证:")
+    
+    # 参数类型验证
+    type_checks = []
+    if not isinstance(disk_number, int):
+        type_checks.append(f"❌ disk_number 应该是 int 类型，实际是 {type(disk_number).__name__}")
+    else:
+        type_checks.append("✅ disk_number 类型正确")
+        
+    if not isinstance(win_gho, str):
+        type_checks.append(f"❌ win_gho 应该是 str 类型，实际是 {type(win_gho).__name__}")
+    else:
+        type_checks.append("✅ win_gho 类型正确")
+        
+    if not isinstance(efi_size, int):
+        type_checks.append(f"❌ efi_size 应该是 int 类型，实际是 {type(efi_size).__name__}")
+    else:
+        type_checks.append("✅ efi_size 类型正确")
+        
+    if not isinstance(c_size, int):
+        type_checks.append(f"❌ c_size 应该是 int 类型，实际是 {type(c_size).__name__}")
+    else:
+        type_checks.append("✅ c_size 类型正确")
+        
+    if not isinstance(gho_exe, str):
+        type_checks.append(f"❌ gho_exe 应该是 str 类型，实际是 {type(gho_exe).__name__}")
+    else:
+        type_checks.append("✅ gho_exe 类型正确")
+    
+    for check in type_checks:
+        print(f"  {check}")
+    
+    # 参数合理性检查
+    print("\n📏 参数合理性检查:")
+    logic_checks = []
+    
+    if disk_number <= 0:
+        logic_checks.append("⚠️  disk_number 应该大于0")
+    else:
+        logic_checks.append("✅ disk_number 数值合理")
+        
+    if efi_size <= 0:
+        logic_checks.append("⚠️  efi_size 应该大于0")
+    elif efi_size < 100:
+        logic_checks.append("⚠️  efi_size 可能过小（建议至少100MB）")
+    else:
+        logic_checks.append("✅ efi_size 数值合理")
+        
+    if c_size <= 0:
+        logic_checks.append("⚠️  c_size 应该大于0")
+    elif c_size < 1000:
+        logic_checks.append("⚠️  c_size 可能过小（建议至少1000MB）")
+    else:
+        logic_checks.append("✅ c_size 数值合理")
+        
+    if not win_gho:
+        logic_checks.append("⚠️  win_gho 不应该为空")
+    else:
+        logic_checks.append("✅ win_gho 路径有效")
+        
+    if not gho_exe:
+        logic_checks.append("⚠️  gho_exe 不应该为空")
+    else:
+        logic_checks.append("✅ gho_exe 路径有效")
+    
+    for check in logic_checks:
+        print(f"  {check}")
+    
+    print("\n" + "=" * 50)
+    print("✅ 参数接收测试完成")
+    print(f"返回值: {parameters}")
+    
+    return parameters
+
+
 def process_multiple_disks(
     disk_numbers: list[int], 
     win_gho: str, 
@@ -307,8 +430,25 @@ if __name__ == "__main__":
     print("🚀 磁盘处理工作流程 - 使用示例")
     print("=" * 60)
     
-    # 示例1: 统一处理函数使用示例（单磁盘）
-    print("🚀 示例1: 统一处理函数使用示例（单磁盘）")
+    # 示例1: 测试函数 - 参数接收验证
+    print("🧪 示例1: 测试函数 - 参数接收验证")
+    print("验证 test_process_parameters 函数能否正确接收和处理参数...")
+    
+    # 调用测试函数
+    test_result = test_process_parameters(
+        disk_number=3,               # 磁盘编号
+        win_gho="img\\test.GHO",  # Windows镜像文件路径
+        efi_size=512,               # EFI分区大小（MB）
+        c_size=50000,               # C分区大小（MB）
+        gho_exe="sw\\ghost64.exe"   # Ghost可执行文件路径（可选，默认值）
+    )
+    
+    print(f"\n测试函数返回值: {test_result}")
+    
+    print("\n" + "=" * 60)
+    
+    # 示例2: 统一处理函数使用示例（单磁盘）
+    print("🚀 示例2: 统一处理函数使用示例（单磁盘）")
     print("处理磁盘3的完整流程...")
     
     # 调用统一的处理函数
@@ -324,8 +464,8 @@ if __name__ == "__main__":
     
     print("\n" + "=" * 60)
     
-    # 示例2: 批量处理多个磁盘
-    print("🚀 示例2: 批量处理多个磁盘")
+    # 示例3: 批量处理多个磁盘
+    print("🚀 示例3: 批量处理多个磁盘")
     print("同时处理磁盘2和磁盘3...")
     
     # 调用批量处理函数
@@ -341,11 +481,12 @@ if __name__ == "__main__":
     
     print("\n" + "=" * 60)
     print("📖 使用说明:")
-    print("1. 单个磁盘处理: 使用 process_disk_workflow() 函数")
-    print("2. 多个磁盘处理: 使用 process_multiple_disks() 函数")
-    print("3. 所有硬盘盘符信息都通过 get_disk_labels() 函数统一查询")
-    print("4. 只需指定 disk_number/disk_numbers, win_gho, efi_size, c_size 四个必要参数")
-    print("5. gho_exe 参数可选，默认使用 'sw\\ghost64.exe'")
-    print("6. 当前置步骤失败时，后续步骤不会执行")
-    print("7. 调用分区函数时，disk_number 会自动减1 (disk_number - 1)")
-    print("8. 批量处理时，每个磁盘独立处理，失败不影响其他磁盘")
+    print("1. 参数测试: 使用 test_process_parameters() 函数验证参数")
+    print("2. 单个磁盘处理: 使用 process_disk_workflow() 函数")
+    print("3. 多个磁盘处理: 使用 process_multiple_disks() 函数")
+    print("4. 所有硬盘盘符信息都通过 get_disk_labels() 函数统一查询")
+    print("5. 只需指定 disk_number/disk_numbers, win_gho, efi_size, c_size 四个必要参数")
+    print("6. gho_exe 参数可选，默认使用 'sw\\ghost64.exe'")
+    print("7. 当前置步骤失败时，后续步骤不会执行")
+    print("8. 调用分区函数时，disk_number 会自动减1 (disk_number - 1)")
+    print("9. 批量处理时，每个磁盘独立处理，失败不影响其他磁盘")
