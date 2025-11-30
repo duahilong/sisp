@@ -73,6 +73,18 @@ def get_disk_letter(disk_number, letter_type):
                 return None
     return None
 
+
+def test_input(disk_number,gho_exe,bcd_exe,win_gho,efi_size,c_size,software_file):
+    
+    print(f"disk_number: {disk_number}")
+    print(f"gho_exe: {gho_exe}")
+    print(f"bcd_exe: {bcd_exe}")
+    print(f"win_gho: {win_gho}")
+    print(f"efi_size: {efi_size}")
+    print(f"c_size: {c_size}")
+    print(f"software_file: {software_file}")
+
+
 if __name__ == "__main__":
     disk_number = 1
     efi_letter = get_disk_letter(disk_number, 'efi')

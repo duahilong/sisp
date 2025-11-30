@@ -13,6 +13,10 @@ import time
 from typing import Any, Dict, List, Optional
 from disk_info import get_disk_info, print_disk_info
 from get_user_disknumber import input_user
+from logic_processing import test_input
+
+
+
 
 # JSON配置缓存 - 这个保留，因为它是真正的缓存机制
 _JSON_CACHE = {}
@@ -433,7 +437,9 @@ def main():
         
         # 显示选择结果
         display_selection_results(disk_numbers, config_data)
-            
+
+        test_input(disk_numbers,config_data.get('gho_exe'),config_data.get('bcd_exe'),config_data.get('win_gho'),config_data.get('efi_size'),config_data.get('c_size'),config_data.get('software_file'))
+
     except ValueError as e:
         print(f"输入错误: {e}")
         print("请使用 --help 查看正确的使用方法。")
