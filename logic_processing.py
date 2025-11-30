@@ -220,65 +220,25 @@ def get_disk_config(disk_number: int) -> dict:
     return {}
 
 
-def list_all_disk_configs() -> None:
-    """
-    列出所有预设的磁盘配置信息
-    """
-    print("📋 所有预设磁盘配置:")
-    print("磁盘编号 | EFI盘符 | C盘符 | D盘符 | E盘符")
-    print("-" * 40)
-    for disk_config in number_list:
-        print(f"磁盘 {disk_config['disk_number']:2}    |   {disk_config['efi_letter']:2}    |  {disk_config['c_letter']:2}   |  {disk_config['d_letter']:2}   |  {disk_config['e_letter']:2}")
-    print()
-
-
 # 示例代码和使用指南
 if __name__ == "__main__":
     print("🚀 磁盘处理工作流程 - 使用示例")
     print("=" * 60)
     
-    # 示例1: 查看所有可用磁盘配置
-    print("\n📋 示例1: 查看所有可用磁盘配置")
-    list_all_disk_configs()
-    
-    # 示例2: 获取特定磁盘的配置信息
-    print("\n📋 示例2: 获取特定磁盘配置")
-    config = get_disk_config(2)
-    if config:
-        print(f"磁盘2的完整配置: {config}")
-    else:
-        print("未找到磁盘2的配置")
-    print()
-    
-    # 示例3: 使用统一函数进行磁盘处理
-    print("🚀 示例3: 统一处理函数使用示例")
-    print("处理磁盘2的完整流程...")
+    # 统一处理函数使用示例
+    print("🚀 统一处理函数使用示例")
+    print("处理磁盘3的完整流程...")
     
     # 调用统一的处理函数
     success = process_disk_workflow(
-        disk_number=2,              # 磁盘编号
-        win_gho="img\\test.GHO", # Windows镜像文件路径
-        efi_size=512,              # EFI分区大小（MB）
-        c_size=50000,              # C分区大小（MB）
-        gho_exe="sw\\ghost64.exe"  # Ghost可执行文件路径（可选，默认值）
+        disk_number=3,               # 磁盘编号
+        win_gho="img\\test.GHO",  # Windows镜像文件路径
+        efi_size=512,               # EFI分区大小（MB）
+        c_size=50000,               # C分区大小（MB）
+        gho_exe="sw\\ghost64.exe"   # Ghost可执行文件路径（可选，默认值）
     )
     
     print(f"\n处理结果: {'🎉 成功' if success else '❌ 失败'}")
-    
-    # 示例4: 快速处理磁盘3
-    print("\n🚀 示例4: 快速处理磁盘3")
-    print("处理磁盘3的完整流程...")
-    
-    success2 = process_disk_workflow(
-        disk_number=3,
-        win_gho="ghost\\win11.gho",
-        efi_size=1024,
-        c_size=80000
-    )
-    
-    print(f"\n处理结果: {'🎉 成功' if success2 else '❌ 失败'}")
-    
-
     
     print("\n" + "=" * 60)
     print("📖 使用说明:")
@@ -287,3 +247,4 @@ if __name__ == "__main__":
     print("3. gho_exe 参数可选，默认使用 'sw\\ghost64.exe'")
     print("4. 当前置步骤失败时，后续步骤不会执行")
     print("5. 函数返回 True 表示全部成功，False 表示有步骤失败")
+    print("6. 调用分区函数时，disk_number 会自动减1 (disk_number - 1)")
