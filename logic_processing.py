@@ -99,12 +99,19 @@ def process_disk_numbers(disk_numbers, efi_size, c_size):
     results = []
     for disk_number in disk_numbers:
         try:
-            all_disk_partitions(disk_number, efi_size, c_size)
-            results.append({
-                "disk_number": disk_number,
-                "status": "success",
-                "message": f"磁盘 {disk_number} 处理成功"
-            })
+            result = all_disk_partitions(disk_number, efi_size, c_size)
+            if result:
+                results.append({
+                    "disk_number": disk_number,
+                    "status": "success",
+                    "message": f"磁盘 {disk_number} 处理成功"
+                })
+            else:
+                results.append({
+                    "disk_number": disk_number,
+                    "status": "error",
+                    "message": f"磁盘 {disk_number} 处理失败"
+                })
         except Exception as e:
             results.append({
                 "disk_number": disk_number,
@@ -128,19 +135,24 @@ def all_disk_partitions(disk_number, efi_size, c_size):
     c_letter = get_disk_letter(disk_number, 'c')
     d_letter = get_disk_letter(disk_number, 'd')
     e_letter = get_disk_letter(disk_number, 'e')
-    print(f"c_size: {c_size}")
 
     # 顺序执行：第一步
-    initialize_disk_to_gpt(disk_number, efi_size, efi_letter)
+    if not initialize_disk_to_gpt(disk_number, efi_size, efi_letter):
+        return False
     
     # 顺序执行：第二步
-    initialize_disk_to_partitioning_C(disk_number, c_size, c_letter)
+    if not initialize_disk_to_partitioning_C(disk_number, c_size, c_letter):
+        return False
     
     # 顺序执行：第三步
-    initialize_disk_to_partitioning_D(disk_number, d_letter,efi_size,c_size)
+    if not initialize_disk_to_partitioning_D(disk_number, d_letter, efi_size, c_size):
+        return False
     
     # 顺序执行：第四步
-    initialize_disk_to_partitioning_E(disk_number, e_letter)
+    if not initialize_disk_to_partitioning_E(disk_number, e_letter):
+        return False
+    
+    return True
 
 
 
