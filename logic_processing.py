@@ -80,46 +80,6 @@ def get_disk_letter(disk_number, letter_type):
     return None
 
 
-def process_disk_numbers(disk_numbers, efi_size, c_size):
-    """
-    处理磁盘编号列表，逐个调用all_disk_partitions函数
-    
-    Args:
-        disk_numbers: 磁盘编号列表，如 [1, 2]
-        efi_size: EFI分区大小 (MB)
-        c_size: C盘分区大小 (MB)
-    
-    Returns:
-        list: 处理结果的列表
-    """
-    # 验证输入必须是列表
-    if not isinstance(disk_numbers, list):
-        raise ValueError(f"disk_numbers必须是列表格式，当前类型: {type(disk_numbers)}")
-    
-    results = []
-    for disk_number in disk_numbers:
-        try:
-            result = all_disk_partitions(disk_number, efi_size, c_size)
-            if result:
-                results.append({
-                    "disk_number": disk_number,
-                    "status": "success",
-                    "message": f"磁盘 {disk_number} 处理成功"
-                })
-            else:
-                results.append({
-                    "disk_number": disk_number,
-                    "status": "error",
-                    "message": f"磁盘 {disk_number} 处理失败"
-                })
-        except Exception as e:
-            results.append({
-                "disk_number": disk_number,
-                "status": "error",
-                "message": f"磁盘 {disk_number} 处理失败: {str(e)}"
-            })
-    
-    return results
 
 
 def all_disk_partitions(disk_number, efi_size, c_size):
@@ -165,28 +125,4 @@ def test_input(disk_number,gho_exe,bcd_exe,win_gho,efi_size,c_size,software_file
     print(f"efi_size: {efi_size}")
     print(f"c_size: {c_size}")
     print(f"software_file: {software_file}")
-
-
-if __name__ == "__main__":
-    # 测试 process_disk_numbers 函数
-    
-    # 测试: 列表格式的磁盘编号
-    print("测试: 列表格式的磁盘编号 [1, 2]")
-    disk_numbers = [1, 2]
-    efi_size = 500
-    c_size = 102400
-    
-    result = process_disk_numbers(disk_numbers, efi_size, c_size)
-    print(f"结果: {result}")
-    
-    print("\n" + "="*50)
-    print("处理结果:")
-    for item in result:
-        status_symbol = "✓" if item["status"] == "success" else "✗"
-        print(f"  {status_symbol} {item['message']}")
-    
-    # 原始测试（保持兼容性）
-    # disk_number = 1
-    # efi_letter = get_disk_letter(disk_number, 'efi')
-    # print(efi_letter)
 

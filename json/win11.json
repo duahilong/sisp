@@ -6,5 +6,5 @@
     "software_file" : "",
     "gho_exe" : "sw\\ghost64.exe",
     "bcd_exe" : "sw\\bcdboot.exe",
-    "excluded_disk_names": ["Samsung SSD 980 PRO 1TB","Cubex CP2000 256GB"]
+    "excluded_disk_names": ["Samsung SSD 980 PRO 1TB"]
 }
