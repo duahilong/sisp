@@ -462,7 +462,7 @@ if __name__ == "__main__":
     json_data = setup_json_config(args)
     efi_size = json_data.get("efi_size")
     c_size = json_data.get("c_size")
-    # all_disk_partitions(disk_number, efi_size, c_size)
+    all_disk_partitions(disk_number, efi_size, c_size)
     print(c_size)
     print(efi_size)
     print(disk_number)
