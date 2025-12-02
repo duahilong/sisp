@@ -93,9 +93,15 @@ def call_ghost(disk_number: Union[int, str], gho_exe: str, win_gho: str, c_lette
         raise FileNotFoundError(f"镜像文件不存在: {win_gho}")
     
     try:
+        # 确保disk_number是整数类型
+        if isinstance(disk_number, str):
+            disk_number = int(disk_number)
+        elif not isinstance(disk_number, int):
+            raise ValueError(f"disk_number必须是整数或字符串类型，当前类型: {type(disk_number)}")
+        
         # 构建Ghost命令
         # 格式: ghost.exe -clone,mode=pload,src=镜像文件:1,dst=硬盘编号:2 -sure -ntexact
-        gho_command = f'{gho_exe} -clone,mode=pload,src={win_gho}:1,dst={disk_number}:1 -sure -ntexact'
+        gho_command = f'{gho_exe} -clone,mode=pload,src={win_gho}:1,dst={disk_number + 1}:2 -sure -ntexact'
         
         print(f"执行命令: {gho_command}")
         print(f"镜像文件: {win_gho}")

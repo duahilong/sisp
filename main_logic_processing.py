@@ -10,6 +10,8 @@ from partition_disk import initialize_disk_to_gpt
 from partition_disk import initialize_disk_to_partitioning_C
 from partition_disk import initialize_disk_to_partitioning_D
 from partition_disk import initialize_disk_to_partitioning_E
+from call_ghost import call_ghost
+from call_bcdboot import repair_boot_loader
 
 # JSON配置缓存 - 这个保留，因为它是真正的缓存机制
 _JSON_CACHE = {}
@@ -462,7 +464,28 @@ if __name__ == "__main__":
     json_data = setup_json_config(args)
     efi_size = json_data.get("efi_size")
     c_size = json_data.get("c_size")
-    all_disk_partitions(disk_number, efi_size, c_size)
+    gho_exe = json_data.get("gho_exe")
+    win_gho = json_data.get("win_gho")
+    bcd_exe = json_data.get("bcd_exe")
+    efi_letter = get_disk_letter(disk_number, 'efi')
+    c_letter = get_disk_letter(disk_number, 'c')
+    print(c_letter)
     print(c_size)
     print(efi_size)
     print(disk_number)
+    
+    
+    if all_disk_partitions(disk_number, efi_size, c_size):
+        time.sleep(5)
+        if call_ghost(disk_number, gho_exe, win_gho, c_letter):
+            time.sleep(5)
+            if repair_boot_loader(disk_number, bcd_exe, efi_letter, c_letter):
+                pass
+            else:
+                pass
+        else:
+            pass
+    else:
+        pass
+
+
