@@ -1,4 +1,5 @@
 # 编译缓存：
 # 排除所有 Python 字节码编译文件和文件夹
 __pycache__/
+img\Intel_WIN11.GHO
 *.py[co]
