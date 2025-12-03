@@ -13,7 +13,7 @@ import time
 from typing import Any, Dict, List, Optional
 from disk_info import get_disk_info, print_disk_info
 from get_user_disknumber import input_user
-from logic_processing import all_disk_partitions, test_input,process_disk_numbers
+# from logic_processing import all_disk_partitions, test_input,process_disk_numbers
 
 
 

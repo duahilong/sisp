@@ -27,9 +27,7 @@ def repair_boot_loader(disk_number, bcd_exe, efi_letter, c_letter):
         # 构建bcdboot命令
         bcdboot_command = f'"{bcd_exe}" {c_letter}:\\Windows /s {efi_letter}: /f UEFI /l zh-cn'
         
-        print(f"正在执行bcdboot修复命令...")
         print(f"命令: {bcdboot_command}")
-        
         # 执行bcdboot命令
         result = subprocess.run(
             bcdboot_command,
@@ -45,13 +43,11 @@ def repair_boot_loader(disk_number, bcd_exe, efi_letter, c_letter):
             print(f"错误信息: {result.stderr}")
             return False
         
-        print("bcdboot命令执行成功!")
         print(f"输出信息: {result.stdout}")
         
         # 检查EFI文件夹是否存在
         efi_path = f"{efi_letter}:\\EFI"
         if os.path.exists(efi_path):
-            print(f"EFI文件夹存在: {efi_path}")
             
             # 进一步检查EFI文件夹内容
             try:

@@ -5,7 +5,9 @@ import time
 import argparse
 from typing import Dict, Any, Optional
 from webbrowser import get
+from disk_info import DiskManager
 
+import disk_info
 from partition_disk import initialize_disk_to_gpt
 from partition_disk import initialize_disk_to_partitioning_C
 from partition_disk import initialize_disk_to_partitioning_D
@@ -391,6 +393,56 @@ def setup_json_config(args: argparse.Namespace) -> Dict[str, Any]:
         return {}
 
 
+def validate_protected_disk(disk_number: int, config_data: Optional[dict] = None) -> bool:
+    """
+    验证用户输入的disk_number是否为保护硬盘
+    
+    Args:
+        disk_number: 磁盘编号 (1-6)
+        config_data: JSON配置数据字典，包含excluded_disk_names字段
+        
+    Returns:
+        bool: 如果不是保护硬盘返回True，如果是保护硬盘返回False
+        
+    Raises:
+        ValueError: 当disk_number超出范围或配置数据无效时抛出
+        RuntimeError: 当无法获取磁盘信息时抛出
+    """
+    if not isinstance(disk_number, int) or disk_number < 1 or disk_number > 6:
+        raise ValueError(f"磁盘编号必须在1-6范围内，错误编号: {disk_number}")
+    
+    # 如果没有提供配置数据，返回True（默认可操作）
+    if config_data is None:
+        return True
+    
+    # 获取保护硬盘名称列表
+    excluded_disk_names = config_data.get('excluded_disk_names', [])
+    if not isinstance(excluded_disk_names, list):
+        raise ValueError("excluded_disk_names必须是列表格式")
+    
+    try:
+        # 使用disk_info模块查询指定磁盘编号的硬盘名称
+        disk_manager = DiskManager()
+        disk_info = disk_manager.get_disk_by_index(disk_number)
+        
+        if disk_info is None:
+            raise RuntimeError(f"未找到磁盘编号 {disk_number} 的信息")
+        
+        disk_name = disk_info.name
+        
+        # 检查是否为保护硬盘
+        if disk_name in excluded_disk_names:
+            print(f"⚠️  磁盘 {disk_number} ({disk_name}) 是保护硬盘，无法操作")
+            return False
+        else:
+            # 验证成功，静默返回（不输出任何信息）
+            return True
+            
+    except Exception as e:
+        raise RuntimeError(f"获取磁盘 {disk_number} 信息失败: {e}")
+
+
+
 def get_disk_letter(disk_number, letter_type):
     """
     获取指定磁盘的特定分区字母
@@ -474,18 +526,19 @@ if __name__ == "__main__":
     print(efi_size)
     print(disk_number)
     
-    
-    if all_disk_partitions(disk_number, efi_size, c_size):
-        time.sleep(5)
-        if call_ghost(disk_number, gho_exe, win_gho, c_letter):
-            time.sleep(5)
-            if repair_boot_loader(disk_number, bcd_exe, efi_letter, c_letter):
-                pass
-            else:
-                pass
-        else:
-            pass
-    else:
-        pass
+    validate_protected_disk(disk_number, json_data)
+
+        # if all_disk_partitions(disk_number, efi_size, c_size):
+        #     time.sleep(5)
+        #     if call_ghost(disk_number, gho_exe, win_gho, c_letter):
+        #         time.sleep(5)
+        #         if repair_boot_loader(disk_number, bcd_exe, efi_letter, c_letter):
+        #             pass
+        #         else:
+        #             pass
+        #     else:
+        #         pass
+        # else:
+        #     pass
 
 
