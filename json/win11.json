@@ -1,10 +1,14 @@
 {
     "description" : "Windows 11 配置",
-    "win_gho" : "img\\Intel_WIN11.GHO",
+    "win_gho" : "D:\\sisp\\img\\111.GHO",
     "efi_size" : 100,
-    "c_size" : 153600,
+    "c_size" : 1536,
     "software_file" : "",
-    "gho_exe" : "sw\\ghost64.exe",
-    "bcd_exe" : "sw\\bcdboot.exe",
-    "excluded_disk_names": ["Samsung SSD 980 PRO 1TB", "Cubex CP2000 256GB","KINGSTON  SNV3S1000G SCSI Disk Device"]
+    "gho_exe" : "D:\\sisp\\sw\\ghost64.exe",
+    "bcd_exe" : "D:\\sisp\\sw\\bcdboot.exe",
+    "excluded_disk_names": [
+        "Samsung SSD 980 PRO 1TB",
+        "Cubex CP2000 256GB",
+        "KINGSTON  SNV3S1000G SCSI Disk Device"
+    ]
 }

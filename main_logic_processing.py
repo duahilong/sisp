@@ -1,4 +1,5 @@
 from ast import parse
+import sys
 import json
 import os
 import time
@@ -18,33 +19,63 @@ from call_bcdboot import repair_boot_loader
 # JSON配置缓存 - 这个保留，因为它是真正的缓存机制
 _JSON_CACHE = {}
 _JSON_CACHE_TIME = {}
+
+class CustomArgumentParser(argparse.ArgumentParser):
+    """
+    重写 ArgumentParser，以便在发生错误或程序退出时，
+    先提示用户按键，防止命令行窗口立即关闭。
+    """
+    
+    def exit(self, status=0, message=None):
+        """
+        覆盖默认的 exit 方法。
+        """
+        if message:
+            # 如果有错误或帮助信息，先打印出来
+            self._print_message(message, sys.stderr)
+        
+        # 🌟 关键修改：在退出前添加暂停 🌟
+        print("\n" + "=" * 40)
+        print("程序已停止。")
+        # 确保暂停指令只在 Windows 控制台环境下有效，防止闪退。
+        input("请按 Enter 键退出...") 
+        print("=" * 40)
+        
+        # 调用系统内置的 sys.exit 来真正退出程序
+        sys.exit(status)
+
+    def error(self, message):
+        """
+        覆盖默认的 error 方法 (例如参数缺失或无效)。
+        它会调用上面的 exit(2, message)。
+        """
+        self.exit(2, '%s: error: %s\n' % (self.prog, message))
+
 def parse_arguments():
-    parser = argparse.ArgumentParser(
-    description="磁盘信息查询工具",
-    epilog="示例: python main.py --disk 3 或 python main.py -d 5 --json config.json"
+    parser = CustomArgumentParser(
+        description="磁盘信息查询工具",
+        epilog="示例: python main.py --disk 3 或 python main.py -d 5 --json config.json"
     )
     
     # 添加磁盘编号参数
     parser.add_argument(
-    '--disk', '-d',
-    type=int,
-    required=True,
-    choices=[1, 2, 3, 4, 5, 6],
-    help='磁盘编号 (1-6)，用于指定要操作的磁盘',
-    metavar='DISK_NUMBER'
+        '--disk', '-d',
+        type=int,
+        required=True,
+        choices=[1, 2, 3, 4, 5, 6],
+        help='磁盘编号 (1-6)，用于指定要操作的磁盘',
+        metavar='DISK_NUMBER'
     )
     
     parser.add_argument(
-    '--json', '-j',
-    type=str,
-    required=True,
-    help='JSON配置文件路径',
-    metavar='FILE_PATH'
+        '--json', '-j',
+        type=str,
+        required=True,
+        help='JSON配置文件路径',
+        metavar='FILE_PATH'
     )
     
     return parser.parse_args()
-
-
 
 number_list = [
     {
@@ -429,7 +460,6 @@ def validate_protected_disk(disk_number: int, config_data: Optional[dict] = None
             raise RuntimeError(f"未找到磁盘编号 {disk_number} 的信息")
         
         disk_name = disk_info.name
-        
         # 检查是否为保护硬盘
         if disk_name in excluded_disk_names:
             print(f"⚠️  磁盘 {disk_number} ({disk_name}) 是保护硬盘，无法操作")
@@ -521,24 +551,36 @@ if __name__ == "__main__":
     bcd_exe = json_data.get("bcd_exe")
     efi_letter = get_disk_letter(disk_number, 'efi')
     c_letter = get_disk_letter(disk_number, 'c')
-    print(c_letter)
-    print(c_size)
-    print(efi_size)
     print(disk_number)
     
-    validate_protected_disk(disk_number, json_data)
+    # 验证磁盘是否可操作
+    if validate_protected_disk(disk_number, json_data):
+        print("✅ 磁盘验证通过")
+        
+        # 执行磁盘分区
+        if all_disk_partitions(disk_number, efi_size, c_size):
+            print("✅ 磁盘分区完成")
+            time.sleep(5)
+            
+            # 执行Ghost镜像恢复
+            if call_ghost(disk_number, gho_exe, win_gho, c_letter):
+                print("✅ Ghost镜像恢复完成")
+                time.sleep(5)
+                
+                # # 修复启动加载器
+                # if repair_boot_loader(disk_number, bcd_exe, efi_letter, c_letter):
+                #     print("✅ 启动加载器修复完成")
+                #     print("🎉 所有操作成功完成！")
+                # else:
+                #     print("❌ 启动加载器修复失败")
+            else:
+                print("❌ Ghost镜像恢复失败")
+        else:
+            print("❌ 磁盘分区失败")
+    else:
+        print("❌ 磁盘验证失败，操作终止")
 
-        # if all_disk_partitions(disk_number, efi_size, c_size):
-        #     time.sleep(5)
-        #     if call_ghost(disk_number, gho_exe, win_gho, c_letter):
-        #         time.sleep(5)
-        #         if repair_boot_loader(disk_number, bcd_exe, efi_letter, c_letter):
-        #             pass
-        #         else:
-        #             pass
-        #     else:
-        #         pass
-        # else:
-        #     pass
+
+    input("请按 Enter 键退出...")
 
 
