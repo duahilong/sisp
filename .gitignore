@@ -4,3 +4,4 @@ __pycache__/
 
 # 排除整个 img 文件夹及其所有内容
 img/
+build/
