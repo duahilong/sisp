@@ -8,7 +8,6 @@ from typing import Dict, Any, Optional
 from webbrowser import get
 from disk_info import DiskManager
 
-import disk_info
 from partition_disk import initialize_disk_to_gpt
 from partition_disk import initialize_disk_to_partitioning_C
 from partition_disk import initialize_disk_to_partitioning_D
@@ -518,6 +517,11 @@ def all_disk_partitions(disk_number, efi_size, c_size):
     c_letter = get_disk_letter(disk_number, 'c')
     d_letter = get_disk_letter(disk_number, 'd')
     e_letter = get_disk_letter(disk_number, 'e')
+    disk_manager = DiskManager()
+    disk_info = disk_manager.get_disk_by_index(disk_number)
+    disk_size = disk_info.capacity
+    disk_size_gb = float(disk_size.replace(' GB', ''))
+
 
     # 顺序执行：第一步
     if not initialize_disk_to_gpt(disk_number, efi_size, efi_letter):
@@ -528,8 +532,11 @@ def all_disk_partitions(disk_number, efi_size, c_size):
         return False
     
     # 顺序执行：第三步
-    if not initialize_disk_to_partitioning_D(disk_number, d_letter, efi_size, c_size):
-        return False
+    # if not initialize_disk_to_partitioning_D(disk_number, d_letter, efi_size, c_size):
+    #     return False
+    if disk_size_gb >= 600:
+        if not initialize_disk_to_partitioning_D(disk_number, d_letter, efi_size, c_size):
+            return False
     
     # 顺序执行：第四步
     if not initialize_disk_to_partitioning_E(disk_number, e_letter):
@@ -552,7 +559,8 @@ if __name__ == "__main__":
     efi_letter = get_disk_letter(disk_number, 'efi')
     c_letter = get_disk_letter(disk_number, 'c')
     print(disk_number)
-    
+
+
     # 验证磁盘是否可操作
     if validate_protected_disk(disk_number, json_data):
         print("✅ 磁盘验证通过")

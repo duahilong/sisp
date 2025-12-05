@@ -133,8 +133,8 @@ def validate_input_parameters(disk_number, efi_size=None, efi_letter=None, c_siz
         if len(letters) != len(set(letters)):
             raise ValueError("盘符不能重复。")
             
-        # 7. 验证所有盘符参数不能包含 C,D,S 这三个字母
-        reserved_letters = ['C', 'D', 'S']
+        # 7. 验证所有盘符参数不能包含 C,D 这两个字母
+        reserved_letters = ['C', 'D']
         for letter_param, letter_value in [('efi_letter', efi_letter), ('c_letter', c_letter), 
                                           ('d_letter', d_letter), ('e_letter', e_letter)]:
             if letter_value is not None and letter_value in reserved_letters:
