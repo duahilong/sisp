@@ -575,12 +575,12 @@ if __name__ == "__main__":
                 print("✅ Ghost镜像恢复完成")
                 time.sleep(5)
                 
-                # # 修复启动加载器
-                # if repair_boot_loader(disk_number, bcd_exe, efi_letter, c_letter):
-                #     print("✅ 启动加载器修复完成")
-                #     print("🎉 所有操作成功完成！")
-                # else:
-                #     print("❌ 启动加载器修复失败")
+                # 修复启动加载器
+                if repair_boot_loader(disk_number, bcd_exe, efi_letter, c_letter):
+                    print("✅ 启动加载器修复完成")
+                    print("🎉 所有操作成功完成！")
+                else:
+                    print("❌ 启动加载器修复失败")
             else:
                 print("❌ Ghost镜像恢复失败")
         else:
