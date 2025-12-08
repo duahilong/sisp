@@ -5,7 +5,6 @@ import tempfile
 import time
 import traceback
 
-import wmi
 
 from disk_info import DiskManager
 
