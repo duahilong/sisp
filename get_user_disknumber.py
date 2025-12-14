@@ -9,8 +9,6 @@ get_user_disknumber.py - 用户磁盘编号输入处理模块
 """
 
 import re
-import json
-import os
 from typing import List, Union, Optional
 from disk_info import DiskManager
 
@@ -44,7 +42,15 @@ def parse_disk_input(input_str: str) -> List[int]:
     
     # 处理字母'a'表示全部
     if input_str == 'a' or input_str == 'all':
-        return list(range(1, 7))  # 1-6
+        try:
+            disk_manager = DiskManager()
+            disk_info_list = disk_manager.get_disk_info()
+            if not disk_info_list:
+                raise ValueError("无法获取磁盘信息")
+            # 返回所有磁盘的索引编号，过滤掉索引为0的项
+            return [disk.index for disk in disk_info_list if disk.index > 0]
+        except Exception as e:
+            raise ValueError(f"获取磁盘信息失败: {e}")
     
     result = set()  # 使用set避免重复
     
@@ -182,7 +188,7 @@ def interactive_input():
     - 单个数字：3
     - 数字范围：1-3, 3-6
     - 多个数字：1,3,5
-    - 字母 a：表示全部(1-6)
+    - 字母 a：表示全部磁盘
     - 0：退出
     
     Returns:
@@ -192,7 +198,7 @@ def interactive_input():
         # 获取用户输入（更新提示信息）
         while True:
             try:
-                user_input = input("请输入磁盘编号（单个数字3、范围1-3、多个数字1,3,5或1 3 5、字母a表示全部，0退出）：").strip()
+                user_input = input("请输入磁盘编号（单个数字3、范围1-3、多个数字1,3,5或1 3 5、字母a表示全部磁盘，0退出）：").strip()
                 
                 # 允许用户退出
                 if user_input == '0':
@@ -328,29 +334,3 @@ def input_user(disk_number=None, config_data: Optional[dict] = None):
             return valid_disks
         return None
 
-
-# # 模块级测试函数（可选）
-# def test_parse_disk_input():
-#     """测试parse_disk_input函数的测试函数"""
-#     test_cases = [
-#         ("3", [3]),
-#         ("1-3", [1, 2, 3]),
-#         ("1,3,5", [1, 3, 5]),
-#         ("1 3 5", [1, 3, 5]),
-#         ("1 2-4 6", [1, 2, 3, 4, 6]),
-#         ("a", [1, 2, 3, 4, 5, 6]),
-#     ]
-    
-#     print("测试 parse_disk_input 函数:")
-#     for input_str, expected in test_cases:
-#         try:
-#             result = parse_disk_input(input_str)
-#             status = "✓" if result == expected else "✗"
-#             print(f"{status} '{input_str}' -> {result} (期望: {expected})")
-#         except Exception as e:
-#             print(f"✗ '{input_str}' -> 错误: {e}")
-
-
-# if __name__ == "__main__":
-#     # 如果直接运行此文件，进行模块测试
-#     test_parse_disk_input()
