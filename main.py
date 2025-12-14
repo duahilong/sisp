@@ -424,9 +424,10 @@ def main():
     try:
         # 解析命令行参数
         args = parse_arguments()
-        
+    
         # 设置JSON配置
         config_data = setup_json_config(args)
+        json_path = args.json
         
         # 显示磁盘信息
         disk_data = display_disk_information()
