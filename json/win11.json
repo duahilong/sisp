@@ -3,7 +3,7 @@
     "win_gho" : "D:\\sisp\\img\\111.GHO",
     "efi_size" : 100,
     "c_size" : 1536,
-    "software_file" : "",
+    "software_file" : "D:\\常用软件",
     "gho_exe" : "D:\\sisp\\sw\\ghost64.exe",
     "bcd_exe" : "D:\\sisp\\sw\\bcdboot.exe",
     "excluded_disk_names": [

@@ -14,6 +14,8 @@ from partition_disk import initialize_disk_to_partitioning_D
 from partition_disk import initialize_disk_to_partitioning_E
 from call_ghost import call_ghost
 from call_bcdboot import repair_boot_loader
+from call_copy import copy_software_folder
+from common_functions import get_disk_letter, number_list
 
 # JSON配置缓存 - 这个保留，因为它是真正的缓存机制
 _JSON_CACHE = {}
@@ -76,50 +78,7 @@ def parse_arguments():
     
     return parser.parse_args()
 
-number_list = [
-    {
-        "disk_number": 1,
-        "efi_letter": "E",
-        "c_letter": "F",
-        "d_letter": "G",
-        "e_letter": "H",
-    },
-    {
-        "disk_number": 2,
-        "efi_letter": "I",
-        "c_letter": "J",
-        "d_letter": "K",
-        "e_letter": "L",
-    },
-    {
-        "disk_number": 3,
-        "efi_letter": "M",
-        "c_letter": "N",
-        "d_letter": "O",
-        "e_letter": "P",
-    },
-    {
-        "disk_number": 4,
-        "efi_letter": "Q",
-        "c_letter": "R",
-        "d_letter": "S",
-        "e_letter": "T",
-    },
-    {
-        "disk_number": 5,
-        "efi_letter": "U",
-        "c_letter": "V",
-        "d_letter": "W",
-        "e_letter": "X",
-    },
-    {
-        "disk_number": 6,
-        "efi_letter": "Y",
-        "c_letter": "Z",
-        "d_letter": "A",
-        "e_letter": "B",
-    },
-]
+
 
 def get_config_value(config_data: Dict[str, Any], key_path: str, default: Any = None) -> Any:
     """
@@ -409,13 +368,14 @@ def setup_json_config(args: argparse.Namespace) -> Dict[str, Any]:
         args: 命令行参数对象，包含json字段
         
     Returns:
-        读取的JSON配置数据字典，如果失败则返回空字典
+        读取的JSON配置数据字典，如果失败则终止程序
     """
     if args.json:
         config_data = read_json_config(args.json)
         if config_data is None:
             print("X JSON配置文件读取失败，程序退出。")
-            return {}
+            input("请按 Enter 键退出...")
+            sys.exit(1)
         else:
             return config_data
     else:
@@ -472,39 +432,7 @@ def validate_protected_disk(disk_number: int, config_data: Optional[dict] = None
 
 
 
-def get_disk_letter(disk_number, letter_type):
-    """
-    获取指定磁盘的特定分区字母
-    
-    Args:
-        disk_number: 磁盘编号 (1-6)
-        letter_type: 分区类型 ('efi', 'c', 'd', 'e')
-    
-    Returns:
-        str: 对应的分区字母，如果未找到则返回None
-        
-    Example:
-        >>> get_disk_letter(3, 'efi')
-        'M'
-    """
-    for disk_config in number_list:
-        if disk_config["disk_number"] == disk_number:
-            if letter_type == 'efi':
-                return disk_config["efi_letter"]
-            elif letter_type == 'c':
-                return disk_config["c_letter"]
-            elif letter_type == 'd':
-                return disk_config["d_letter"]
-            elif letter_type == 'e':
-                return disk_config["e_letter"]
-            else:
-                return None
-    return None
-
-
-
-
-def all_disk_partitions(disk_number, efi_size, c_size):
+def all_disk_partitions(disk_number, efi_size, c_size, software_path=None):
     """
     初始化磁盘分区
     
@@ -512,6 +440,7 @@ def all_disk_partitions(disk_number, efi_size, c_size):
         disk_number: 磁盘编号 (1-6)
         efi_size: EFI分区大小 (MB)
         c_size: C盘分区大小 (MB)
+        software_path: 要复制的软件文件夹路径（可选）
     """
     efi_letter = get_disk_letter(disk_number, 'efi')
     c_letter = get_disk_letter(disk_number, 'c')
@@ -542,6 +471,13 @@ def all_disk_partitions(disk_number, efi_size, c_size):
     if not initialize_disk_to_partitioning_E(disk_number, e_letter):
         return False
     
+    # 顺序执行：第五步 - 复制软件文件夹（如果提供了路径）
+    if software_path:
+        copy_result = copy_software_folder(disk_number, software_path)
+        # 如果复制结果包含错误信息，则认为失败
+        if "错误" in copy_result:
+            return False
+    
     return True
 
 
@@ -551,6 +487,13 @@ if __name__ == "__main__":
     args = parse_arguments()
     disk_number = args.disk
     json_data = setup_json_config(args)
+    
+    # 检查JSON数据是否有效
+    if not json_data:
+        print("X JSON配置数据无效，程序终止。")
+        input("请按 Enter 键退出...")
+        sys.exit(1)
+    
     efi_size = json_data.get("efi_size")
     c_size = json_data.get("c_size")
     gho_exe = json_data.get("gho_exe")
@@ -558,6 +501,7 @@ if __name__ == "__main__":
     bcd_exe = json_data.get("bcd_exe")
     efi_letter = get_disk_letter(disk_number, 'efi')
     c_letter = get_disk_letter(disk_number, 'c')
+    software_file = json_data.get("software_file")
     print(disk_number)
 
 
@@ -566,7 +510,7 @@ if __name__ == "__main__":
         print("✅ 磁盘验证通过")
         
         # 执行磁盘分区
-        if all_disk_partitions(disk_number, efi_size, c_size):
+        if all_disk_partitions(disk_number, efi_size, c_size, software_file):
             print("✅ 磁盘分区完成")
             time.sleep(5)
             
