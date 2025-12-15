@@ -34,21 +34,15 @@ def parse_arguments():
     """
     parser = argparse.ArgumentParser(
         description="磁盘信息查询工具",
-        epilog="示例: python main.py --disk 3 或 python main.py -d 5 --json config.json"
+        epilog="示例: python main.py --json config.json"
     )
     
-    parser.add_argument(
-        '--disk', '-d',
-        type=str,
-        required=False,
-        help='要操作的磁盘编号。支持格式：单个数字(3)、范围(1-3)、多个数字(1,3,5)、字母a(全部)',
-        metavar='NUMBER'
-    )
+
     
     parser.add_argument(
         '--json', '-j',
         type=str,
-        required=False,
+        required=True,
         help='JSON配置文件路径',
         metavar='FILE_PATH'
     )
@@ -428,6 +422,7 @@ def main():
         # 设置JSON配置
         config_data = setup_json_config(args)
         json_path = args.json
+        print(f"JSON配置文件路径: {json_path}")
         
         # 显示磁盘信息
         disk_data = display_disk_information()
@@ -435,7 +430,7 @@ def main():
             return
         
         # 处理用户输入（传递配置数据进行保护硬盘验证）
-        disk_numbers = handle_user_input(args.disk, config_data)
+        disk_numbers = handle_user_input(None, config_data)
         if disk_numbers is None:
             return
         
