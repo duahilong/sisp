@@ -1,0 +1,667 @@
+*********************************
+Date   : Mon Dec 22 21:09:53 2025
+Error Number: (36000)
+Message: A GeneralException occurred
+Version: 11.5.1.2269 (Feb  2 2010, Build=2269)
+OS Version: Professional  (Build 9200)
+Command line arguments: -clone,mode=pload,src=D:\sisp\img\111.GHO:1,dst=3:2 -sure -ntexact
+Active Switches :
+       AutoName
+PathName            : 
+DumpFile            : 
+DumpPos             : 0
+FlagImplode         : 0
+FlagExplode         : 0
+
+Operation Details :
+  Total size.........0
+  MB copied..........0
+  MB remaining.......0
+  Percent complete...0%
+  Speed..............0 MB/min
+  Time elapsed.......0:00   
+  Time remaining.....0:00   
+
+Assertion failed
+attrHeader->formCode != RESIDENT_FORM
+Generated at ..\NTFSFilesystemCursoryDetect.cpp:447
+
+Thread #28584 Call Stack
+NTFSFilesystemCursoryDetect::getVolumeVersion
+NTFSFilesystemCursoryDetect::getFilesystemFormat
+FilesystemManager::getFilesystemInfo
+LfoFilesystemManagerImp::ctor
+sub_main
+main
+
+Call Stack
+Address            Frame              Logical Addr              Module
+0x00007ffd3d443b14 0x000000000014e470 0x0001:0x0000000000162b14 C:\WINDOWS\SYSTEM32\ntdll.dll
+0x00007ffd244cde00 0x000000000014e478 SymLoadModule+0x0000000000000000
+0x00007ffd246219cf 0x000000000014e480 SymSearchW+0x000000000000007f
+0x00007ffd2461f7cf 0x000000000014e488 SymEnumTypesW+0x000000000000004f
+0x00007ffd244d286f 0x000000000014e490 SymFunctionTableAccess64AccessRoutines+0x000000000000032f
+0x00000000024722e8 0x000000000014e498 0x0000:0x0000000000000000 
+0x0000000000000001 0x000000000014e4a0 0x0000:0x0000000000000000 
+0x000000014043e926 0x000000000014e4a8 0x0001:0x000000000043d926 D:\sisp\sw\ghost64.exe
+0x0000000002472988 0x000000000014e4b0 0x0000:0x0000000000000000 
+0x000000000014ea98 0x000000000014e4b8 0x0000:0x0000000000000000 
+0x0000000002473888 0x000000000014e4c0 0x0000:0x0000000000000000 
+0x0000000000000002 0x000000000014e4c8 0x0000:0x0000000000000000 
+0xfffffffffffffffe 0x000000000014e4d0 0x0000:0x0000000000000000 
+0x00000000023ce778 0x000000000014e4d8 0x0000:0x0000000000000000 
+0x000000014074bf80 0x000000000014e4e0 0x0003:0x00000000000e0f80 D:\sisp\sw\ghost64.exe
+0x00000000023ce888 0x000000000014e4e8 0x0000:0x0000000000000000 
+0xfffffffffffffffe 0x000000000014e4f0 0x0000:0x0000000000000000 
+0x0000000002444b88 0x000000000014e4f8 0x0000:0x0000000000000000 
+0x000000000244ae58 0x000000000014e500 0x0000:0x0000000000000000 
+0x000000014043c991 0x000000000014e508 0x0001:0x000000000043b991 D:\sisp\sw\ghost64.exe
+0x0000000000100001 0x000000000014e510 0x0000:0x0000000000000000 
+0xffffffffffff0033 0x000000000014e518 0x0000:0x0000000000000000 
+0x00000246002bbf80 0x000000000014e520 0x0000:0x0000000000000000 
+0x00000000023ce888 0x000000000014e528 0x0000:0x0000000000000000 
+0x000000000014eb28 0x000000000014e530 0x0000:0x0000000000000000 
+0x0000000000000200 0x000000000014e538 0x0000:0x0000000000000000 
+0x0000000000132806 0x000000000014e540 0x0000:0x0000000000000000 
+0x0000000002473488 0x000000000014e548 0x0000:0x0000000000000000 
+0x000000000244b2e8 0x000000000014e550 0x0000:0x0000000000000000 
+0x0000000000000002 0x000000000014e558 0x0000:0x0000000000000000 
+End Call Stack
+
+
+Start heap available: 2625273856
+Cur   heap available: 2633019392
+Total Memory:         3978686464
+
+Allocated
+  33500 ..\ghost.cpp:1511
+Free
+
+Fat details:
+
+NTFS details:
+----------------
+
+NTFS Global Flags:
+----------------
+	 contiguousWrite=0 forceDiskClusterMapping=0 
+	 inhibitCHKDSK=0 ignoreBadLog=0 ignoreCHKDSKBit=0
+	 enable_cache=0 xfrbuflen=0 
+	 last_attr_type = 0 
+	 loadExact = 0 
+	 sameSize = 0 
+----------------
+
+Disk Info :
+  remote.............0
+  drive..............0
+  sectorsUsedCount.......0
+  estimatedUsedCount.....0
+  numPartitions..............0
+  Version............0
+  Full structure dump....
+   {
+      SVersion: 0
+      SCylinders: 0
+      SDiskFormat: 1
+      SMbr: 
+         0x0000 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 
+         0x0010 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 
+         0x0020 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 
+         0x0030 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 
+         0x0040 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 
+         0x0050 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 
+         0x0060 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 
+         0x0070 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 
+         0x0080 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 
+         0x0090 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 
+         0x00a0 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 
+         0x00b0 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 
+         0x00c0 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 
+         0x00d0 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 
+         0x00e0 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 
+         0x00f0 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 
+         0x0100 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 
+         0x0110 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 
+         0x0120 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 
+         0x0130 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 
+         0x0140 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 
+         0x0150 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 
+         0x0160 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 
+         0x0170 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 
+         0x0180 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 
+         0x0190 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 
+         0x01a0 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 
+         0x01b0 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 
+         0x01c0 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 
+         0x01d0 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 
+         0x01e0 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 
+         0x01f0 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 
+         0x0200 
+      SIsSpanned: false
+      SOs2Name: 
+         0x0000 00 00 00 00 00 00 00 00 00 00 
+      SFingerprint: 0
+      SHeadsPerCyl: 0
+      SectorsPerTrack: 0
+      SRemote: false
+      SEndOfImagePosition: 0
+      SFlags: 0
+      SPatchedFileCount: 0
+      SDrive: 0
+      SEstimatedUsed: 0
+      STotalSectors: 0
+      SPartitions: 
+      [
+      ]
+      SSectorsUsed: 0
+   }
+
+
+ # Ord Boot Id Ext     First        Num       Last       Used NTFS
+
+Disk Info :
+  remote.............0
+  drive..............0
+  sectorsUsedCount.......0
+  estimatedUsedCount.....0
+  numPartitions..............0
+  Version............0
+  Full structure dump....
+   {
+      SVersion: 0
+      SCylinders: 0
+      SDiskFormat: 1
+      SMbr: 
+         0x0000 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 
+         0x0010 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 
+         0x0020 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 
+         0x0030 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 
+         0x0040 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 
+         0x0050 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 
+         0x0060 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 
+         0x0070 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 
+         0x0080 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 
+         0x0090 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 
+         0x00a0 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 
+         0x00b0 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 
+         0x00c0 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 
+         0x00d0 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 
+         0x00e0 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 
+         0x00f0 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 
+         0x0100 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 
+         0x0110 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 
+         0x0120 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 
+         0x0130 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 
+         0x0140 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 
+         0x0150 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 
+         0x0160 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 
+         0x0170 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 
+         0x0180 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 
+         0x0190 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 
+         0x01a0 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 
+         0x01b0 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 
+         0x01c0 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 
+         0x01d0 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 
+         0x01e0 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 
+         0x01f0 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 
+         0x0200 
+      SIsSpanned: false
+      SOs2Name: 
+         0x0000 00 00 00 00 00 00 00 00 00 00 
+      SFingerprint: 0
+      SHeadsPerCyl: 0
+      SectorsPerTrack: 0
+      SRemote: false
+      SEndOfImagePosition: 0
+      SFlags: 0
+      SPatchedFileCount: 0
+      SDrive: 0
+      SEstimatedUsed: 0
+      STotalSectors: 0
+      SPartitions: 
+      [
+      ]
+      SSectorsUsed: 0
+   }
+
+
+ # Ord Boot Id Ext     First        Num       Last       Used NTFS
+
+Fixed Drives
+
+Drive 0 NVMe Samsung SSD 980 GXA7
+
+Total Sectors            1953525168
+Bytes per Sector         512
+MB                       953869
+Cylinders                121601
+Heads                    255
+Sectors per Track        63
+
+Drive 0 NVMe Samsung SSD 980 GXA7
+ASPI
+Total Sectors            1953525168
+Bytes per Sector         512
+MB                       953869
+Successful IO Count      0
+
+WinNT (Active)
+Total Sectors            1953525168
+Bytes per Sector         512
+MB                       953869
+Cylinders                121601
+Heads                    255
+Sectors per Track        63
+Successful IO Count      5
+
+Drive 1 NVMe GXF-512 PRO 8193
+
+Total Sectors            1000215216
+Bytes per Sector         512
+MB                       488386
+Cylinders                62260
+Heads                    255
+Sectors per Track        63
+
+Drive 1 NVMe GXF-512 PRO 8193
+ASPI
+Total Sectors            1000215216
+Bytes per Sector         512
+MB                       488386
+Successful IO Count      0
+
+WinNT (Active)
+Total Sectors            1000215216
+Bytes per Sector         512
+MB                       488386
+Cylinders                62260
+Heads                    255
+Sectors per Track        63
+Successful IO Count      5
+
+Drive 2 Samsung SSD 860 EVO 250G 0 E5C32C954321
+
+Total Sectors            488397168
+Bytes per Sector         512
+MB                       238475
+Cylinders                30401
+Heads                    255
+Sectors per Track        63
+
+Drive 2 Samsung SSD 860 EVO 250G 0 E5C32C954321
+ASPI
+Total Sectors            488397168
+Bytes per Sector         512
+MB                       238475
+Successful IO Count      0
+
+WinNT (Active)
+Total Sectors            488397168
+Bytes per Sector         512
+MB                       238475
+Cylinders                30401
+Heads                    255
+Sectors per Track        63
+Successful IO Count      5
+
+Drive 3 Realtek USB 3.2 Device 1.00 0000000000000000
+
+Total Sectors            28131328
+Bytes per Sector         512
+MB                       13736
+Cylinders                1751
+Heads                    255
+Sectors per Track        63
+
+Drive 3 Realtek USB 3.2 Device 1.00 0000000000000000
+ASPI
+Total Sectors            28131328
+Bytes per Sector         512
+MB                       13736
+Successful IO Count      0
+
+WinNT (Active)
+Total Sectors            28131328
+Bytes per Sector         512
+MB                       13736
+Cylinders                1751
+Heads                    255
+Sectors per Track        63
+Successful IO Count      14
+
+AsyncIo : 0
+
+Image Devices
+
+Key[1]   C:
+Path     C:
+Desc     C: []
+Type     Disk
+
+Key[1]   D:
+Path     D:
+Desc     D: [нд╪Ч]
+Type     Disk
+
+Key[1]   I:
+Path     I:
+Desc     I: [EFI]
+Type     Disk
+
+Key[1]   J:
+Path     J:
+Desc     J: []
+Type     Disk
+
+Key[1]   L:
+Path     L:
+Desc     L: []
+Type     Disk
+
+Key[1]   M:
+Path     M:
+Desc     M: [EFI]
+Type     Disk
+
+Key[1]   N:
+Path     N:
+Desc     N:
+Type     Disk
+
+Key[1]   P:
+Path     P:
+Desc     P: []
+Type     Disk
+
+
+Volume attributes
+=================
+LargeMemoryAllocationFactory diagnostic...
+==========================================
+
+Heap available at construction: 36984799232
+Current heap available:         36992581632
+Total Memory:                   51223326720
+
+Allocated
+
+DiskManager diagnostic...
+=========================
+
+Fixed Drives
+
+Drive 0 NVMe Samsung SSD 980 GXA7
+
+Total Sectors            1953525168
+Bytes per Sector         512
+MB                       953869
+Cylinders                121601
+Heads                    255
+Sectors per Track        63
+
+Drive 0 NVMe Samsung SSD 980 GXA7
+ASPI
+Total Sectors            1953525168
+Bytes per Sector         512
+MB                       953869
+Successful IO Count      0
+
+WinNT (Active)
+Total Sectors            1953525168
+Bytes per Sector         512
+MB                       953869
+Cylinders                121601
+Heads                    255
+Sectors per Track        63
+Successful IO Count      5
+
+Drive 1 NVMe GXF-512 PRO 8193
+
+Total Sectors            1000215216
+Bytes per Sector         512
+MB                       488386
+Cylinders                62260
+Heads                    255
+Sectors per Track        63
+
+Drive 1 NVMe GXF-512 PRO 8193
+ASPI
+Total Sectors            1000215216
+Bytes per Sector         512
+MB                       488386
+Successful IO Count      0
+
+WinNT (Active)
+Total Sectors            1000215216
+Bytes per Sector         512
+MB                       488386
+Cylinders                62260
+Heads                    255
+Sectors per Track        63
+Successful IO Count      5
+
+Drive 2 Samsung SSD 860 EVO 250G 0 E5C32C954321
+
+Total Sectors            488397168
+Bytes per Sector         512
+MB                       238475
+Cylinders                30401
+Heads                    255
+Sectors per Track        63
+
+Drive 2 Samsung SSD 860 EVO 250G 0 E5C32C954321
+ASPI
+Total Sectors            488397168
+Bytes per Sector         512
+MB                       238475
+Successful IO Count      0
+
+WinNT (Active)
+Total Sectors            488397168
+Bytes per Sector         512
+MB                       238475
+Cylinders                30401
+Heads                    255
+Sectors per Track        63
+Successful IO Count      5
+
+Drive 3 Realtek USB 3.2 Device 1.00 0000000000000000
+
+Total Sectors            28131328
+Bytes per Sector         512
+MB                       13736
+Cylinders                1751
+Heads                    255
+Sectors per Track        63
+
+Drive 3 Realtek USB 3.2 Device 1.00 0000000000000000
+ASPI
+Total Sectors            28131328
+Bytes per Sector         512
+MB                       13736
+Successful IO Count      0
+
+WinNT (Active)
+Total Sectors            28131328
+Bytes per Sector         512
+MB                       13736
+Cylinders                1751
+Heads                    255
+Sectors per Track        63
+Successful IO Count      14
+
+FilesystemMounter diagnostic...
+===============================
+
+
+FilesystemManager diagnostic...
+===============================
+
+Volume 1
+VolumePos: 1.2:
+DriveLetter: C:
+Description:  930.62GB Disk 0 Offset     117MB  930.62GB NVMe Samsung SSD 980 GXA7
+Type:        fsfNtfsWindowsXP
+Name:        
+
+Volume 2
+VolumePos: 2.1:
+DriveLetter: D:
+Description:  476.94GB Disk 1 Offset       2MB  476.94GB NVMe GXF-512 PRO 8193
+Type:        fsfNtfsWindowsXP
+Name:        
+
+Volume 3
+VolumePos: 3.2:
+DriveLetter: J:
+Description:    1.50GB Disk 2 Offset     101MB    1.50GB Samsung SSD 860 EVO 250G 0 E5C32C954321
+Type:        fsfNtfsWindowsXP
+Name:        
+
+Volume 4
+VolumePos: 3.3:
+DriveLetter: L:
+Description:  231.29GB Disk 2 Offset    1.60GB  231.29GB Samsung SSD 860 EVO 250G 0 E5C32C954321
+Type:        fsfNtfsWindowsXP
+Name:        
+
+
+LfoFilesystemManager diagnostic...
+==================================
+
+Filesystem Index: 0
+Filesystem Descriptor:
+  ID's:
+    ID Type: 2
+    ID: C:
+    ID Type: 1
+    ID: 1.2:
+  DriveType: 4
+  FilesystemInfo:
+    formatType: 8
+    volumeName: 
+
+Filesystem Index: 1
+Filesystem Descriptor:
+  ID's:
+    ID Type: 2
+    ID: D:
+    ID Type: 1
+    ID: 2.1:
+    ID Type: 4
+    ID: :
+  DriveType: 4
+  FilesystemInfo:
+    formatType: 8
+    volumeName: 
+
+Filesystem Index: 2
+Filesystem Descriptor:
+  ID's:
+    ID Type: 2
+    ID: I:
+  DriveType: 4
+  No FilesystemInfo structure.
+  Filesystem has no VolumePtr
+
+Filesystem Index: 3
+Filesystem Descriptor:
+  ID's:
+    ID Type: 2
+    ID: J:
+    ID Type: 1
+    ID: 3.2:
+  DriveType: 4
+  FilesystemInfo:
+    formatType: 8
+    volumeName: 
+
+Filesystem Index: 4
+Filesystem Descriptor:
+  ID's:
+    ID Type: 2
+    ID: L:
+    ID Type: 1
+    ID: 3.3:
+  DriveType: 4
+  FilesystemInfo:
+    formatType: 8
+    volumeName: 
+
+Filesystem Index: 5
+Filesystem Descriptor:
+  ID's:
+    ID Type: 2
+    ID: M:
+  DriveType: 4
+  No FilesystemInfo structure.
+  Filesystem has no VolumePtr
+
+Filesystem Index: 6
+Filesystem Descriptor:
+  ID's:
+    ID Type: 2
+    ID: N:
+  DriveType: 4
+  No FilesystemInfo structure.
+  Filesystem has no VolumePtr
+
+Filesystem Index: 7
+Filesystem Descriptor:
+  ID's:
+    ID Type: 2
+    ID: P:
+  DriveType: 4
+  No FilesystemInfo structure.
+  Filesystem has no VolumePtr
+
+
+Environment Variables
+=====================
+
+ALLUSERSPROFILE=C:\ProgramData
+APPDATA=C:\Users\13500\AppData\Roaming
+CommonProgramFiles=C:\Program Files\Common Files
+CommonProgramFiles(x86)=C:\Program Files (x86)\Common Files
+CommonProgramW6432=C:\Program Files\Common Files
+COMPUTERNAME=COKEDESKTOP
+ComSpec=C:\WINDOWS\system32\cmd.exe
+DriverData=C:\Windows\System32\Drivers\DriverData
+HOMEDRIVE=C:
+HOMEPATH=\Users\13500
+LOCALAPPDATA=C:\Users\13500\AppData\Local
+LOGONSERVER=\\COKEDESKTOP
+NUMBER_OF_PROCESSORS=24
+OneDrive=C:\Users\13500\OneDrive
+OS=Windows_NT
+Path=C:\Users\13500\AppData\Local\Temp\_MEI261762\pywin32_system32;C:\Program Files (x86)\NVIDIA Corporation\PhysX\Common;C:\WINDOWS\system32;C:\WINDOWS;C:\WINDOWS\System32\Wbem;C:\WINDOWS\System32\WindowsPowerShell\v1.0\;C:\WINDOWS\System32\OpenSSH\;C:\Program Files\Bandizip\;C:\Program Files\dotnet\;C:\Program Files (x86)\Windows Kits\8.1\Windows Performance Toolkit\;C:\Program Files\NVIDIA Corporation\NVIDIA App\NvDLISR;C:\Program Files\PowerToys\;C:\Program Files\Git\cmd;C:\Program Files\Tailscale\;c:\Users\13500\AppData\Local\Programs\Trae CN\bin;C:\Users\13500\AppData\Local\Programs\Python\Python313\Scripts\;C:\Users\13500\AppData\Local\Programs\Python\Python313\;C:\Users\13500\AppData\Local\Microsoft\WindowsApps;C:\Users\13500\AppData\Local\Programs\Microsoft VS Code\bin;c:\users\13500\appdata\roaming\python\python313\scripts;c:\users\13500\.local\bin
+PATHEXT=.COM;.EXE;.BAT;.CMD;.VBS;.VBE;.JS;.JSE;.WSF;.WSH;.MSC
+PROCESSOR_ARCHITECTURE=AMD64
+PROCESSOR_IDENTIFIER=Intel64 Family 6 Model 183 Stepping 1, GenuineIntel
+PROCESSOR_LEVEL=6
+PROCESSOR_REVISION=b701
+ProgramData=C:\ProgramData
+ProgramFiles=C:\Program Files
+ProgramFiles(x86)=C:\Program Files (x86)
+ProgramW6432=C:\Program Files
+PROMPT=$P$G
+PSModulePath=C:\Program Files\WindowsPowerShell\Modules;C:\WINDOWS\system32\WindowsPowerShell\v1.0\Modules
+PUBLIC=C:\Users\Public
+SystemDrive=C:
+SystemRoot=C:\WINDOWS
+TEMP=C:\Users\13500\AppData\Local\Temp
+TMP=C:\Users\13500\AppData\Local\Temp
+USERDOMAIN=COKEDESKTOP
+USERDOMAIN_ROAMINGPROFILE=COKEDESKTOP
+USERNAME=13500
+USERPROFILE=C:\Users\13500
+windir=C:\WINDOWS
+ZES_ENABLE_SYSMAN=1
+_PYI_APPLICATION_HOME_DIR=C:\Users\13500\AppData\Local\Temp\_MEI261762
+_PYI_ARCHIVE_FILE=D:\sisp\dist\main_logic_processing.exe
+_PYI_PARENT_PROCESS_LEVEL=1
+__COMPAT_LAYER=RunAsAdmin DetectorsAppHealth Installer
+
+
+*********************************

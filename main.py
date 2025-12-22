@@ -424,60 +424,37 @@ def execute_main_logic(disk_numbers: List[int], json_path: str, main_logic: str)
     import subprocess
     import sys
     import os
+    from concurrent.futures import ThreadPoolExecutor
     
     # 转换为绝对路径
     main_logic_abs = os.path.abspath(main_logic)
     json_path_abs = os.path.abspath(json_path)
     
-    for disk_number in disk_numbers:
+    def run_single_disk(disk_number: int) -> None:
+        """执行单个磁盘的程序"""
         print(f"执行 {main_logic_abs} -d {disk_number} -j {json_path_abs}")
         try:
-            # Windows环境下使用PowerShell执行，解决编码问题
             if sys.platform == "win32":
-                # 设置PowerShell输出编码为UTF-8，并执行程序
-                command = f'$OutputEncoding = [System.Text.Encoding]::UTF8; [Console]::OutputEncoding = [System.Text.Encoding]::UTF8; & \'{main_logic_abs}\' -d {disk_number} -j \'{json_path_abs}\''
-                
-                # 尝试方法1: 使用PowerShell并设置编码
-                try:
-                    result = subprocess.run(
-                        f'powershell -Command "{command}"',
-                        shell=True,
-                        check=True,
-                        capture_output=True,
-                        text=True,
-                        encoding='utf-8',
-                        errors='ignore'
-                    )
-                    print(f"执行结果: {result.stdout}")
-                    if result.stderr:
-                        print(f"错误信息: {result.stderr}")
-                except subprocess.CalledProcessError:
-                    # 如果方法1失败，尝试方法2: 直接执行不捕获输出
-                    print("尝试直接执行程序...")
-                    subprocess.run(
-                        f'powershell -Command "& \'{main_logic_abs}\' -d {disk_number} -j \'{json_path_abs}\'"',
-                        shell=True,
-                        check=True
-                    )
+                # Windows环境下使用PowerShell直接执行，不捕获输出
+                subprocess.run(
+                    f'powershell -Command "& \'{main_logic_abs}\' -d {disk_number} -j \'{json_path_abs}\'"',
+                    shell=True,
+                    check=True
+                )
             else:
                 # 非Windows环境使用原有方式
-                result = subprocess.run(
+                subprocess.run(
                     [main_logic_abs, "-d", str(disk_number), "-j", json_path_abs],
-                    check=True,
-                    capture_output=True,
-                    text=True
+                    check=True
                 )
-                print(f"执行结果: {result.stdout}")
-                if result.stderr:
-                    print(f"错误信息: {result.stderr}")
-                
         except subprocess.CalledProcessError as e:
-            print(f"执行失败: {e}")
-            if hasattr(e, 'stderr') and e.stderr:
-                print(f"错误输出: {e.stderr}")
+            print(f"磁盘 {disk_number} 执行失败: {e}")
         except FileNotFoundError:
             print(f"错误: 找不到程序 {main_logic_abs}")
-            break
+    
+    # 使用线程池同时执行所有磁盘操作
+    with ThreadPoolExecutor(max_workers=len(disk_numbers)) as executor:
+        executor.map(run_single_disk, disk_numbers)
 
 
 def main():
@@ -507,6 +484,8 @@ def main():
         display_selection_results(disk_numbers, config_data)
         print(disk_numbers)
         execute_main_logic(disk_numbers, json_path, main_logic)
+
+        input("请按 Enter 键退出...")
 
     except ValueError as e:
         print(f"输入错误: {e}")
