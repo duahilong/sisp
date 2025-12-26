@@ -424,23 +424,36 @@ def execute_main_logic(disk_numbers: List[int], json_path: str, main_logic: str)
     import subprocess
     import sys
     import os
-    from concurrent.futures import ThreadPoolExecutor
+    import threading
     
     # 转换为绝对路径
     main_logic_abs = os.path.abspath(main_logic)
     json_path_abs = os.path.abspath(json_path)
     
-    def run_single_disk(disk_number: int) -> None:
-        """执行单个磁盘的程序"""
+    def run_single_disk(disk_number: int, delay_seconds: int) -> None:
+        """执行单个磁盘的程序
+        
+        Args:
+            disk_number: 磁盘编号
+            delay_seconds: 启动前的延迟秒数
+        """
+        # 延迟启动
+        if delay_seconds > 0:
+            print(f"等待 {delay_seconds} 秒后启动磁盘 {disk_number}...")
+            time.sleep(delay_seconds)
+        
         print(f"执行 {main_logic_abs} -d {disk_number} -j {json_path_abs}")
         try:
             if sys.platform == "win32":
-                # Windows环境下使用PowerShell直接执行，不捕获输出
-                subprocess.run(
-                    f'powershell -Command "& \'{main_logic_abs}\' -d {disk_number} -j \'{json_path_abs}\'"',
-                    shell=True,
-                    check=True
+                # Windows环境下开启新窗口执行
+                process = subprocess.Popen(
+                    [main_logic_abs, "-d", str(disk_number), "-j", json_path_abs],
+                    creationflags=subprocess.CREATE_NEW_CONSOLE
                 )
+                # 等待8秒，给程序初始化时间
+                time.sleep(8)
+                # 等待程序执行完成
+                process.wait()
             else:
                 # 非Windows环境使用原有方式
                 subprocess.run(
@@ -452,9 +465,18 @@ def execute_main_logic(disk_numbers: List[int], json_path: str, main_logic: str)
         except FileNotFoundError:
             print(f"错误: 找不到程序 {main_logic_abs}")
     
-    # 使用线程池同时执行所有磁盘操作
-    with ThreadPoolExecutor(max_workers=len(disk_numbers)) as executor:
-        executor.map(run_single_disk, disk_numbers)
+    # 使用线程池错开时间启动所有磁盘操作
+    threads = []
+    for index, disk_number in enumerate(disk_numbers):
+        # 每个磁盘延迟启动的时间：索引 * 8秒
+        delay = index * 8
+        thread = threading.Thread(target=run_single_disk, args=(disk_number, delay))
+        threads.append(thread)
+        thread.start()
+    
+    # 等待所有线程完成
+    for thread in threads:
+        thread.join()
 
 
 def main():
