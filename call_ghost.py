@@ -6,9 +6,7 @@ Ghost软件调用模块
 """
 
 import subprocess
-import sys
 import os
-import time
 from typing import Union
 
 
@@ -23,12 +21,14 @@ def validate_windows_folder(c_letter: str) -> bool:
         bool: 如果找到Windows文件夹返回True，否则返回False
     """
     
-    # 确保盘符格式正确（以冒号结尾）
-    if not c_letter.endswith(':'):
-        c_letter = c_letter + ':'
+    # 标准化盘符：统一为 "X" 格式
+    c_letter = c_letter.strip().rstrip(':')
+    if len(c_letter) != 1:
+        print(f"无效盘符: {c_letter}")
+        return False
     
     # 构建Windows文件夹路径
-    windows_path = os.path.join(c_letter, 'Windows')
+    windows_path = f"{c_letter}:\\Windows"
     
     try:
         # 检查Windows文件夹是否存在
@@ -101,7 +101,12 @@ def call_ghost(disk_number: Union[int, str], gho_exe: str, win_gho: str, c_lette
         
         # 构建Ghost命令
         # 格式: ghost.exe -clone,mode=pload,src=镜像文件:1,dst=硬盘编号:2 -sure -ntexact
-        gho_command = f'{gho_exe} -clone,mode=pload,src={win_gho}:1,dst={disk_number + 1}:2 -sure -ntexact'
+        gho_command = [
+            gho_exe,
+            f"-clone,mode=pload,src={win_gho}:1,dst={disk_number + 1}:2",
+            "-sure",
+            "-ntexact",
+        ]
         
         print(f"执行命令: {gho_command}")
         print(f"镜像文件: {win_gho}")
@@ -111,7 +116,6 @@ def call_ghost(disk_number: Union[int, str], gho_exe: str, win_gho: str, c_lette
         # 等待进程完成，Ghost是交互式程序，需要等待用户操作或自动完成
         process = subprocess.Popen(
             gho_command,
-            shell=True,
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,
             text=True,

@@ -7,15 +7,13 @@ BCD Boot 修复工具
 
 import os
 import subprocess
-import sys
 
 
-def repair_boot_loader(disk_number, bcd_exe, efi_letter, c_letter):
+def repair_boot_loader(bcd_exe, efi_letter, c_letter):
     """
     修复硬盘引导
     
     Args:
-        disk_number (int): 硬盘编号
         bcd_exe (str): bcdboot.exe文件路径
         efi_letter (str): EFI分区盘符
         c_letter (str): 系统盘符
@@ -24,14 +22,30 @@ def repair_boot_loader(disk_number, bcd_exe, efi_letter, c_letter):
         bool: 修复成功返回True，失败返回False
     """
     try:
+        if not bcd_exe or not os.path.exists(bcd_exe):
+            print(f"bcdboot可执行文件不存在: {bcd_exe}")
+            return False
+
+        if not isinstance(efi_letter, str) or len(efi_letter) != 1:
+            print(f"无效的EFI盘符: {efi_letter}")
+            return False
+
+        if not isinstance(c_letter, str) or len(c_letter) != 1:
+            print(f"无效的系统盘符: {c_letter}")
+            return False
+
+        c_windows_path = f"{c_letter}:\\Windows"
+        if not os.path.isdir(c_windows_path):
+            print(f"系统目录不存在: {c_windows_path}")
+            return False
+
         # 构建bcdboot命令
-        bcdboot_command = f'"{bcd_exe}" {c_letter}:\\Windows /s {efi_letter}: /f UEFI /l zh-cn'
+        bcdboot_command = [bcd_exe, c_windows_path, "/s", f"{efi_letter}:", "/f", "UEFI", "/l", "zh-cn"]
         
         print(f"命令: {bcdboot_command}")
         # 执行bcdboot命令
         result = subprocess.run(
             bcdboot_command,
-            shell=True,
             capture_output=True,
             text=True,
             encoding='gbk'  # Windows命令行编码

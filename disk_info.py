@@ -3,7 +3,6 @@ from tabulate import tabulate
 from typing import List, Optional, Dict, Any
 import subprocess
 import time
-import shlex
 
 # subprocess命令模板常量
 _PARTITION_STYLE_COMMAND_TEMPLATE = [
@@ -253,13 +252,11 @@ class DiskManager:
             return None
 
 
+_disk_manager_instance = None
+
+
 def get_disk_info() -> Optional[List[List[Any]]]:
-    """
-    获取磁盘信息的兼容函数（保持原有接口）。
-    
-    Returns:
-        List[List[Any]]: 磁盘信息二维列表，格式为：[索引, 名称, 容量, 驱动器盘符, 分区表格式]
-    """
+    """获取磁盘信息的兼容函数"""
     manager = DiskManager()
     return manager.get_disk_info_raw()
 
