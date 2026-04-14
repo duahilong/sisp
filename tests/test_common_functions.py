@@ -95,7 +95,7 @@ class TestReadJsonConfig(unittest.TestCase):
         valid_config = {
             "description": "测试配置",
             "efi_size": 100,
-            "c_size": 1536,
+            "c_size": 153600,
             "excluded_disk_names": ["Disk1", "Disk2"]
         }
         with open(self.valid_json_path, 'w', encoding='utf-8') as f:

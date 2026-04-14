@@ -12,6 +12,46 @@ from call_bcdboot import repair_boot_loader
 from call_copy import copy_software_folder
 from common_functions import get_disk_letter, read_json_config, get_disk_manager
 
+
+def parse_capacity_gb(capacity_text: str) -> float:
+    """将磁盘容量字符串转换为 GB 浮点数。"""
+    if not isinstance(capacity_text, str):
+        raise ValueError("capacity_text 必须是字符串")
+
+    normalized = capacity_text.upper().replace("GB", "").strip()
+    return float(normalized)
+
+
+def get_dynamic_c_size(disk_size_gb: float) -> int:
+    """根据磁盘容量返回动态 C 分区大小（MB）。"""
+    if disk_size_gb < 600:
+        return 153600
+    if disk_size_gb < 1200:
+        return 204800
+    return 307200
+
+
+def resolve_c_size(disk_number: int, fallback_c_size: int, config_data: Dict[str, Any]) -> int:
+    """根据开关决定是否动态计算 C 分区大小。"""
+    enable_dynamic_c_size = bool(config_data.get("enable_dynamic_c_size", False))
+    if not enable_dynamic_c_size:
+        return fallback_c_size
+
+    try:
+        disk_manager = get_disk_manager()
+        disk_info = disk_manager.get_disk_by_index(disk_number)
+        if disk_info is None:
+            print(f"[WARN] 未获取到磁盘 {disk_number} 信息，沿用配置 c_size={fallback_c_size}")
+            return fallback_c_size
+
+        disk_size_gb = parse_capacity_gb(disk_info.capacity)
+        dynamic_c_size = get_dynamic_c_size(disk_size_gb)
+        print(f"[OK] 动态C分区已启用: 磁盘 {disk_number} 容量 {disk_size_gb:.2f}GB -> c_size={dynamic_c_size}")
+        return dynamic_c_size
+    except Exception as e:
+        print(f"[WARN] 动态计算 c_size 失败({e})，沿用配置 c_size={fallback_c_size}")
+        return fallback_c_size
+
 class CustomArgumentParser(argparse.ArgumentParser):
     """
     重写 ArgumentParser，以便在发生错误或程序退出时，
@@ -150,7 +190,7 @@ def all_disk_partitions(disk_number, efi_size, c_size, software_path=None):
     if disk_info is None:
         print(f"[ERROR] 未找到磁盘 {disk_number} 的信息")
         return False
-    disk_size_gb = float(disk_info.capacity.replace(' GB', ''))
+    disk_size_gb = parse_capacity_gb(disk_info.capacity)
 
 
     # 顺序执行：第一步
@@ -197,6 +237,7 @@ if __name__ == "__main__":
     
     efi_size = json_data.get("efi_size")
     c_size = json_data.get("c_size")
+    c_size = resolve_c_size(disk_number, c_size, json_data)
     gho_exe = json_data.get("gho_exe")
     win_gho = json_data.get("win_gho")
     bcd_exe = json_data.get("bcd_exe")
@@ -234,3 +275,4 @@ if __name__ == "__main__":
     input("请按 Enter 键退出...")
 
 
+    c_size = resolve_c_size(disk_number, c_size, json_data)

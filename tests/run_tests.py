@@ -23,6 +23,8 @@ def create_test_suite():
         'tests.test_partition_disk',
         'tests.test_call_bcdboot',
         'tests.test_call_copy',
+        'tests.test_dynamic_c_size',
+        'tests.test_partition_workflow',
     ]
     
     for module in test_modules:

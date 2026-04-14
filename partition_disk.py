@@ -19,7 +19,14 @@ def execute_diskpart_command(commands, capture_output=False):
     """执行DiskPart命令"""
     script_path = None
     try:
-        script_content = "\n".join(commands) + "\nexit\n"
+        if not isinstance(commands, list) or not commands:
+            raise ValueError("DiskPart命令列表不能为空")
+
+        normalized_commands = [str(cmd).strip() for cmd in commands if str(cmd).strip()]
+        if not normalized_commands:
+            raise ValueError("DiskPart命令列表无有效命令")
+
+        script_content = "\n".join(normalized_commands) + "\nexit\n"
         
         with tempfile.NamedTemporaryFile(mode='w', suffix='.txt', delete=False, encoding='ascii') as script_file:
             script_file.write(script_content)
@@ -30,6 +37,8 @@ def execute_diskpart_command(commands, capture_output=False):
                 ['diskpart', '/s', script_path],
                 capture_output=True,
                 text=True,
+                encoding='gbk',
+                errors='replace',
                 timeout=120
             )
             return result.stdout + result.stderr
@@ -37,8 +46,16 @@ def execute_diskpart_command(commands, capture_output=False):
             result = subprocess.run(
                 ['diskpart', '/s', script_path],
                 capture_output=True,
+                text=True,
+                encoding='gbk',
+                errors='replace',
                 timeout=120
             )
+            if result.returncode != 0:
+                output = (result.stdout or "") + (result.stderr or "")
+                print(f"[ERROR] DiskPart执行失败，返回码={result.returncode}")
+                if output.strip():
+                    print(output)
             return result.returncode == 0
                 
     except subprocess.TimeoutExpired:
