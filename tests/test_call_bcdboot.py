@@ -7,6 +7,7 @@ import unittest
 from unittest.mock import Mock, patch, MagicMock
 import sys
 import os
+import subprocess
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
@@ -112,6 +113,18 @@ class TestRepairBootLoaderMocked(unittest.TestCase):
         self.assertIn('E:', call_args)
         self.assertIn('/f', call_args)
         self.assertIn('UEFI', call_args)
+
+    @patch('call_bcdboot.subprocess.run')
+    @patch('call_bcdboot.os.path.exists')
+    @patch('call_bcdboot.os.path.isdir')
+    def test_bcdboot_timeout(self, mock_isdir, mock_exists, mock_run):
+        """测试 bcdboot 超时"""
+        mock_exists.return_value = True
+        mock_isdir.return_value = True
+        mock_run.side_effect = subprocess.TimeoutExpired("bcdboot", 60)
+
+        result = repair_boot_loader("bcdboot.exe", "S", "F")
+        self.assertFalse(result)
 
 
 if __name__ == '__main__':

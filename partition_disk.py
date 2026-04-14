@@ -52,7 +52,9 @@ def execute_diskpart_command(commands, capture_output=False):
                 timeout=120
             )
             if result.returncode != 0:
-                output = (result.stdout or "") + (result.stderr or "")
+                stdout_text = result.stdout if isinstance(result.stdout, str) else str(result.stdout or "")
+                stderr_text = result.stderr if isinstance(result.stderr, str) else str(result.stderr or "")
+                output = stdout_text + stderr_text
                 print(f"[ERROR] DiskPart执行失败，返回码={result.returncode}")
                 if output.strip():
                     print(output)
@@ -83,6 +85,17 @@ def _verify_partition_created(disk_number, expected_letter):
     time.sleep(2)
     
     disk_manager = get_disk_manager()
+    # 分区刚变更后主动使缓存失效，避免读取旧盘符信息
+    try:
+        if hasattr(disk_manager, "_cache_timestamp"):
+            disk_manager._cache_timestamp = 0
+        if hasattr(disk_manager, "_cached_disks"):
+            disk_manager._cached_disks = None
+        if hasattr(disk_manager, "_cached_logical_map"):
+            disk_manager._cached_logical_map = None
+    except Exception:
+        pass
+
     disk_info = disk_manager.get_disk_by_index(disk_number)
     
     if disk_info is None:
@@ -195,8 +208,8 @@ def initialize_disk_to_partitioning_C(disk_number, c_size=None, c_letter=None):
             print(f"[ERROR] {msg}")
             return False
     
-    print("没有指定C分区的大小或盘符，不执行任何分区操作。")
-    return True
+    print("[ERROR] C分区参数缺失：必须同时提供 c_size 和 c_letter")
+    return False
 
 
 def initialize_disk_to_partitioning_D(disk_number, d_letter=None, efi_size=None, c_size=None):

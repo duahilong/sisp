@@ -4,6 +4,15 @@ import shutil
 import ctypes
 
 
+def _copy_result(success, message, code):
+    """统一复制函数返回结构。"""
+    return {
+        "success": bool(success),
+        "message": message,
+        "code": code,
+    }
+
+
 def verify_disk_letter(disk_number):
     """验证并返回指定磁盘的可用盘符"""
     d_letter = get_disk_letter(disk_number, 'd')
@@ -36,15 +45,15 @@ def verify_disk_letter(disk_number):
 def copy_software_folder(disk_number, software_file):
     """将软件文件夹复制到指定磁盘的根目录"""
     if not os.path.exists(software_file):
-        return f"错误：源文件夹 {software_file} 不存在"
+        return _copy_result(False, f"源文件夹 {software_file} 不存在", "source_not_found")
     
     if not os.path.isdir(software_file):
-        return f"错误：{software_file} 不是一个有效的文件夹"
+        return _copy_result(False, f"{software_file} 不是一个有效的文件夹", "source_not_directory")
     
     target_drive = verify_disk_letter(disk_number)
     
     if not target_drive:
-        return "错误：无法获取目标盘符"
+        return _copy_result(False, "无法获取目标盘符", "target_drive_not_found")
     
     folder_name = os.path.basename(os.path.normpath(software_file))
     target_root = f"{target_drive}:\\"
@@ -59,14 +68,14 @@ def copy_software_folder(disk_number, software_file):
         
         if os.path.exists(target_path) and os.path.isdir(target_path):
             if os.listdir(target_path):
-                return f"成功：文件夹已复制到 {target_path}"
+                return _copy_result(True, f"文件夹已复制到 {target_path}", "ok")
             else:
-                return f"警告：文件夹已复制但目标文件夹为空"
+                return _copy_result(False, "文件夹已复制但目标文件夹为空", "target_empty")
         else:
-            return f"错误：复制验证失败"
+            return _copy_result(False, "复制验证失败", "verify_failed")
             
     except Exception as e:
-        return f"错误：复制过程中发生异常 - {str(e)}"
+        return _copy_result(False, f"复制过程中发生异常 - {str(e)}", "copy_exception")
 
 
 def _get_windows_file_attributes(path):

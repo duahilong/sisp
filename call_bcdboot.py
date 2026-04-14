@@ -48,7 +48,8 @@ def repair_boot_loader(bcd_exe, efi_letter, c_letter):
             bcdboot_command,
             capture_output=True,
             text=True,
-            encoding='gbk'  # Windows命令行编码
+            encoding='gbk',  # Windows命令行编码
+            timeout=60
         )
         
         # 检查命令执行结果
@@ -79,6 +80,9 @@ def repair_boot_loader(bcd_exe, efi_letter, c_letter):
             print(f"EFI文件夹不存在: {efi_path}")
             return False
             
+    except subprocess.TimeoutExpired:
+        print("执行bcdboot修复超时")
+        return False
     except Exception as e:
         print(f"执行bcdboot修复时发生异常: {e}")
         return False

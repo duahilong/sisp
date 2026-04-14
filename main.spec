@@ -5,7 +5,10 @@ a = Analysis(
     ['main.py'],
     pathex=[],
     binaries=[],
-    datas=[],
+    datas=[
+        ('json/win11.json', 'json'),
+        ('Readme.md', '.'),
+    ],
     hiddenimports=['wmi', 'win32com', 'pythoncom', 'pywintypes'],
     hookspath=[],
     hooksconfig={},

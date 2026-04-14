@@ -137,6 +137,16 @@ class TestInitializeDiskToPartitioningCMocked(unittest.TestCase):
         
         self.assertFalse(result)
 
+    @patch('partition_disk.is_admin')
+    def test_c_partition_missing_params_should_fail(self, mock_admin):
+        """测试 C 分区参数缺失时应失败"""
+        from partition_disk import initialize_disk_to_partitioning_C
+
+        mock_admin.return_value = True
+
+        self.assertFalse(initialize_disk_to_partitioning_C(1, None, 'F'))
+        self.assertFalse(initialize_disk_to_partitioning_C(1, 1536, None))
+
 
 class TestExecuteDiskpartCommandMocked(unittest.TestCase):
     """测试 execute_diskpart_command 函数"""

@@ -110,28 +110,6 @@ def parse_arguments():
     return parser.parse_args()
 
 
-def get_config_value(config_data: Dict[str, Any], key_path: str, default: Any = None) -> Any:
-    """安全获取配置值"""
-    if not config_data:
-        return default
-    
-    if '.' not in key_path:
-        return config_data.get(key_path, default)
-    
-    keys = key_path.split('.')
-    current = config_data
-    
-    try:
-        for key in keys:
-            if isinstance(current, dict) and key in current:
-                current = current[key]
-            else:
-                return default
-        return current if current is not None else default
-    except (TypeError, KeyError, AttributeError):
-        return default
-
-
 def setup_json_config(args: argparse.Namespace) -> Dict[str, Any]:
     """设置并读取JSON配置文件"""
     if args.json:
@@ -215,8 +193,11 @@ def all_disk_partitions(disk_number, efi_size, c_size, software_path=None):
     # 顺序执行：第五步 - 复制软件文件夹（如果提供了路径）
     if software_path:
         copy_result = copy_software_folder(disk_number, software_path)
-        # 如果复制结果包含错误信息，则认为失败
-        if "错误" in copy_result:
+        if not isinstance(copy_result, dict):
+            print(f"[ERROR] 软件复制返回格式异常: {copy_result}")
+            return False
+        if not copy_result.get("success", False):
+            print(f"[ERROR] 软件复制失败: {copy_result.get('message')}")
             return False
     
     return True
@@ -254,7 +235,13 @@ if __name__ == "__main__":
             time.sleep(5)
             
             # 执行Ghost镜像恢复
-            if call_ghost(disk_number, gho_exe, win_gho, c_letter):
+            ghost_ok = False
+            try:
+                ghost_ok = call_ghost(disk_number, gho_exe, win_gho, c_letter)
+            except Exception as e:
+                print(f"[ERROR] Ghost镜像恢复异常: {e}")
+
+            if ghost_ok:
                 print("[OK] Ghost镜像恢复完成")
                 time.sleep(5)
                 
@@ -273,6 +260,3 @@ if __name__ == "__main__":
 
 
     input("请按 Enter 键退出...")
-
-
-    c_size = resolve_c_size(disk_number, c_size, json_data)

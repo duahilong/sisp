@@ -58,8 +58,8 @@ class TestCopySoftwareFolder(unittest.TestCase):
 
     def test_source_not_exists(self):
         result = copy_software_folder(1, "C:\\NonExistent")
-        self.assertIn("错误", result)
-        self.assertIn("不存在", result)
+        self.assertFalse(result["success"])
+        self.assertEqual(result["code"], "source_not_found")
 
     def test_source_is_not_directory(self):
         with tempfile.NamedTemporaryFile(delete=False) as f:
@@ -67,7 +67,8 @@ class TestCopySoftwareFolder(unittest.TestCase):
 
         try:
             result = copy_software_folder(1, temp_path)
-            self.assertIn("错误", result)
+            self.assertFalse(result["success"])
+            self.assertEqual(result["code"], "source_not_directory")
         finally:
             if os.path.exists(temp_path):
                 os.unlink(temp_path)
@@ -88,7 +89,8 @@ class TestCopySoftwareFolder(unittest.TestCase):
         with tempfile.TemporaryDirectory() as temp_dir:
             result = copy_software_folder(1, temp_dir)
 
-        self.assertIn(":", result)
+        self.assertTrue(result["success"])
+        self.assertEqual(result["code"], "ok")
         mock_sync_attrs.assert_called_once()
 
     @patch('call_copy.verify_disk_letter')
@@ -98,7 +100,8 @@ class TestCopySoftwareFolder(unittest.TestCase):
         with tempfile.TemporaryDirectory() as temp_dir:
             result = copy_software_folder(1, temp_dir)
 
-        self.assertIn("错误", result)
+        self.assertFalse(result["success"])
+        self.assertEqual(result["code"], "target_drive_not_found")
 
 
 class TestAttributeSync(unittest.TestCase):

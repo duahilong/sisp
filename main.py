@@ -8,7 +8,7 @@ main.py - 磁盘信息主程序
 
 import argparse
 import time
-from typing import Any, Dict, List, Optional
+from typing import Dict, List, Optional
 from disk_info import get_disk_info, print_disk_info
 from get_user_disknumber import input_user
 from common_functions import read_json_config
@@ -30,78 +30,6 @@ def parse_arguments():
     )
     
     return parser.parse_args()
-
-
-def get_config_value(config_data: Dict[str, Any], key_path: str, default: Any = None) -> Any:
-    """安全获取配置值"""
-    if not config_data:
-        return default
-    
-    if '.' not in key_path:
-        return config_data.get(key_path, default)
-    
-    keys = key_path.split('.')
-    current = config_data
-    
-    try:
-        for key in keys:
-            if isinstance(current, dict) and key in current:
-                current = current[key]
-            else:
-                return default
-        return current if current is not None else default
-    except (TypeError, KeyError, AttributeError):
-        return default
-
-
-def analyze_json_structure(data: Any, max_depth: int = 3, current_depth: int = 0):
-    """分析并显示JSON数据结构"""
-    if current_depth >= max_depth:
-        return
-    
-    indent = "  " * current_depth
-    
-    if isinstance(data, dict):
-        print(f"{indent}字典结构 - {len(data)} 个键值对:")
-        keys = list(data.keys())
-        main_keys = keys[:5] if len(keys) > 5 else keys
-        
-        for key in main_keys:
-            value = data[key]
-            value_type = type(value).__name__
-            if isinstance(value, str):
-                preview = value[:20] + "..." if len(value) > 20 else value
-                print(f"{indent}  {key}: {value_type} = {repr(preview)}")
-            elif isinstance(value, (int, float)):
-                print(f"{indent}  {key}: {value_type} = {value}")
-            elif isinstance(value, list):
-                print(f"{indent}  {key}: {value_type}[{len(value)}]")
-            elif isinstance(value, dict):
-                print(f"{indent}  {key}: {value_type}[{len(value)}]")
-            else:
-                print(f"{indent}  {key}: {value_type}")
-        
-        if len(keys) > 5:
-            print(f"{indent}  ... 还有 {len(keys) - 5} 个其他键值")
-            
-        if current_depth < max_depth - 1:
-            nested_dicts = [v for v in data.values() if isinstance(v, dict) and len(v) > 0]
-            for i, nested_data in enumerate(nested_dicts[:2]):
-                print(f"{indent}  嵌套字典 {i+1}:")
-                analyze_json_structure(nested_data, max_depth, current_depth + 2)
-                
-    elif isinstance(data, list):
-        print(f"{indent}列表结构 - {len(data)} 个元素:")
-        if data:
-            sample_item = data[0]
-            sample_type = type(sample_item).__name__
-            print(f"{indent}  元素类型: {sample_type}")
-            
-            if isinstance(sample_item, dict) and sample_item:
-                sample_keys = list(sample_item.keys())[:3]
-                print(f"{indent}  主要键值: {', '.join(sample_keys)}")
-    else:
-        print(f"{indent}{type(data).__name__}: {data}")
 
 
 def setup_json_config(args: argparse.Namespace) -> Dict[str, Any]:
@@ -219,6 +147,8 @@ def execute_main_logic(disk_numbers: List[int], json_path: str, main_logic: str)
                 time.sleep(8)
                 # 等待程序执行完成
                 process.wait()
+                if process.returncode != 0:
+                    print(f"磁盘 {disk_number} 执行失败，退出码: {process.returncode}")
             else:
                 # 非Windows环境使用原有方式
                 subprocess.run(
@@ -229,6 +159,8 @@ def execute_main_logic(disk_numbers: List[int], json_path: str, main_logic: str)
             print(f"磁盘 {disk_number} 执行失败: {e}")
         except FileNotFoundError:
             print(f"错误: 找不到程序 {main_logic_abs}")
+        except Exception as e:
+            print(f"磁盘 {disk_number} 执行时发生异常: {e}")
     
     # 使用线程池错开时间启动所有磁盘操作
     threads = []

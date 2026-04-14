@@ -115,7 +115,7 @@ python -m PyInstaller --clean main_logic_processing.spec
   - `>= 600GB 且 < 1200GB` -> `c_size = 204800`（200GB）
   - `>= 1200GB` -> `c_size = 307200`（300GB）
 - 开关关闭时保持原行为，继续使用 JSON 中固定 `c_size`，确保向后兼容。
-- 分区流程当前为：`GPT -> C -> (容量>=600GB 时创建 D) -> E`，任一步失败即中断。
+- 分区流程当前为：`GPT(含EFI创建) -> C -> (容量>=600GB 时创建 D) -> E`，任一步失败即中断。
 - 软件复制逻辑已增强为同步文件和文件夹的全部 Windows 属性（不仅隐藏属性）。
 - 测试体系新增两类专项测试：
   - 动态 C 分区测试：`tests/test_dynamic_c_size.py`
@@ -127,3 +127,4 @@ python -m PyInstaller --clean main_logic_processing.spec
 - 项目会执行真实磁盘与引导操作，请务必先确认目标磁盘编号。
 - 在生产环境使用前，建议先在测试机验证配置与流程。
 - 若双击 `main.exe` 直接退出，通常是缺少 `--json` 参数；请通过命令行附带参数运行。
+- 打包后的 EXE 会内置 `json/win11.json` 与 `Readme.md`，但 `sw/`（ghost、bcdboot）、`img/`（镜像）和 `software_file` 目录仍需按配置在目标机器提供。
