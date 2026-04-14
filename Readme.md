@@ -87,6 +87,14 @@ python main_logic_processing.py -d 1 -j json/win11.json
 python tests/run_tests.py
 ```
 
+Windows 下若出现中文乱码，优先使用：
+
+```bat
+run_tests.bat
+```
+
+说明：`py_compile` 仅用于 `.py` 文件，不要传入 `Readme.md` 等非 Python 文件。
+
 ## 打包 EXE
 
 ```bash
