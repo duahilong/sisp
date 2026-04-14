@@ -7,11 +7,21 @@ main.py - 磁盘信息主程序
 """
 
 import argparse
+import sys
 import time
-from typing import Dict, List, Optional
+from typing import Any, Dict, List, Optional
 from disk_info import get_disk_info, print_disk_info
 from get_user_disknumber import input_user
 from common_functions import read_json_config
+
+
+def pause_if_interactive(prompt: str = "请按 Enter 键退出...") -> None:
+    """仅在交互终端中暂停，避免自动化场景阻塞。"""
+    try:
+        if sys.stdin and sys.stdin.isatty():
+            input(prompt)
+    except EOFError:
+        pass
 
 
 def parse_arguments():
@@ -209,7 +219,7 @@ def main():
         display_selection_results(disk_numbers, config_data)
         execute_main_logic(disk_numbers, json_path, main_logic)
 
-        input("请按 Enter 键退出...")
+        pause_if_interactive()
 
     except ValueError as e:
         print(f"输入错误: {e}")

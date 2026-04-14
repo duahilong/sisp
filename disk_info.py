@@ -11,7 +11,7 @@ _PARTITION_STYLE_COMMAND_TEMPLATE = [
 ]
 
 # PowerShell执行常量
-_POWERSHELL_TIMEOUT = 2
+_POWERSHELL_TIMEOUT = 8
 _PARTITION_STYLE_PATTERN = {"GPT", "MBR", "RAW"}
 
 
@@ -181,27 +181,27 @@ class DiskManager:
     
     def _get_partition_style(self, disk_index: int) -> str:
         """获取指定磁盘的分区表格式。"""
-        try:
-            # 使用模板构建命令，避免字符串拼接
-            command_parts = _PARTITION_STYLE_COMMAND_TEMPLATE.copy()
-            command_parts[2] = command_parts[2].format(disk_index=disk_index)
-            
-            result = subprocess.run(
-                command_parts,
-                capture_output=True, 
-                text=True, 
-                timeout=_POWERSHELL_TIMEOUT
-            )
-            
-            if result.returncode == 0:
-                style = result.stdout.strip()
-                if style in _PARTITION_STYLE_PATTERN:
-                    # 将结果缓存起来
-                    self._cached_partition_styles[disk_index] = style
-                    return style
-        except (subprocess.TimeoutExpired, subprocess.SubprocessError, OSError, ValueError) as e:
-            # 更精确的异常处理，避免吞没其他意外错误
-            pass
+        # 使用模板构建命令，避免字符串拼接
+        command_parts = _PARTITION_STYLE_COMMAND_TEMPLATE.copy()
+        command_parts[2] = command_parts[2].format(disk_index=disk_index)
+
+        # 慢机场景下允许短重试，减少 Unknown 误判
+        for _ in range(2):
+            try:
+                result = subprocess.run(
+                    command_parts,
+                    capture_output=True,
+                    text=True,
+                    timeout=_POWERSHELL_TIMEOUT
+                )
+
+                if result.returncode == 0:
+                    style = result.stdout.strip()
+                    if style in _PARTITION_STYLE_PATTERN:
+                        self._cached_partition_styles[disk_index] = style
+                        return style
+            except (subprocess.TimeoutExpired, subprocess.SubprocessError, OSError, ValueError):
+                continue
         
         # 检查缓存中是否有此磁盘的分区样式
         if disk_index in self._cached_partition_styles:

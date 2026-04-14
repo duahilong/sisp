@@ -13,6 +13,15 @@ from call_copy import copy_software_folder
 from common_functions import get_disk_letter, read_json_config, get_disk_manager
 
 
+def pause_if_interactive(prompt: str = "请按 Enter 键退出...") -> None:
+    """仅在交互终端中暂停，避免自动化场景阻塞。"""
+    try:
+        if sys.stdin and sys.stdin.isatty():
+            input(prompt)
+    except EOFError:
+        pass
+
+
 def parse_capacity_gb(capacity_text: str) -> float:
     """将磁盘容量字符串转换为 GB 浮点数。"""
     if not isinstance(capacity_text, str):
@@ -70,7 +79,7 @@ class CustomArgumentParser(argparse.ArgumentParser):
         print("\n" + "=" * 40)
         print("程序已停止。")
         # 确保暂停指令只在 Windows 控制台环境下有效，防止闪退。
-        input("请按 Enter 键退出...") 
+        pause_if_interactive("请按 Enter 键退出...")
         print("=" * 40)
         
         # 调用系统内置的 sys.exit 来真正退出程序
@@ -116,7 +125,7 @@ def setup_json_config(args: argparse.Namespace) -> Dict[str, Any]:
         config_data = read_json_config(args.json)
         if config_data is None:
             print("X JSON配置文件读取失败，程序退出。")
-            input("请按 Enter 键退出...")
+            pause_if_interactive("请按 Enter 键退出...")
             sys.exit(1)
         else:
             if config_data and 'description' in config_data:
@@ -125,6 +134,26 @@ def setup_json_config(args: argparse.Namespace) -> Dict[str, Any]:
     else:
         print("未指定JSON配置文件，使用默认配置。")
         return {}
+
+
+def validate_main_config(config_data: Dict[str, Any]) -> None:
+    """对主流程关键配置做统一校验，失败时抛出 ValueError。"""
+    required_int_fields = ["efi_size", "c_size"]
+    required_str_fields = ["gho_exe", "win_gho", "bcd_exe"]
+
+    for field in required_int_fields:
+        value = config_data.get(field)
+        if not isinstance(value, int) or value <= 0:
+            raise ValueError(f"配置项 {field} 必须为正整数，当前值: {value}")
+
+    for field in required_str_fields:
+        value = config_data.get(field)
+        if not isinstance(value, str) or not value.strip():
+            raise ValueError(f"配置项 {field} 必须为非空字符串，当前值: {value}")
+
+    excluded_disk_names = config_data.get("excluded_disk_names", [])
+    if excluded_disk_names is not None and not isinstance(excluded_disk_names, list):
+        raise ValueError("配置项 excluded_disk_names 必须为列表")
 
 
 def validate_protected_disk(disk_number: int, config_data: Optional[dict] = None) -> bool:
@@ -213,7 +242,14 @@ if __name__ == "__main__":
     # 检查JSON数据是否有效
     if not json_data:
         print("X JSON配置数据无效，程序终止。")
-        input("请按 Enter 键退出...")
+        pause_if_interactive("请按 Enter 键退出...")
+        sys.exit(1)
+
+    try:
+        validate_main_config(json_data)
+    except ValueError as e:
+        print(f"[ERROR] 配置校验失败: {e}")
+        pause_if_interactive("请按 Enter 键退出...")
         sys.exit(1)
     
     efi_size = json_data.get("efi_size")
@@ -259,4 +295,4 @@ if __name__ == "__main__":
         print("[ERROR] 磁盘验证失败，操作终止")
 
 
-    input("请按 Enter 键退出...")
+    pause_if_interactive("请按 Enter 键退出...")
