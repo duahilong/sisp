@@ -126,6 +126,19 @@ class TestRepairBootLoaderMocked(unittest.TestCase):
         result = repair_boot_loader("bcdboot.exe", "S", "F")
         self.assertFalse(result)
 
+    def test_invalid_bcd_path(self):
+        self.assertFalse(repair_boot_loader("", "S", "F"))
+
+    @patch('call_bcdboot.os.path.exists', return_value=True)
+    def test_invalid_letters(self, _mock_exists):
+        self.assertFalse(repair_boot_loader("bcdboot.exe", "SS", "F"))
+        self.assertFalse(repair_boot_loader("bcdboot.exe", "S", "FF"))
+
+    @patch('call_bcdboot.os.path.exists', return_value=True)
+    @patch('call_bcdboot.os.path.isdir', return_value=False)
+    def test_windows_dir_not_exists(self, _mock_isdir, _mock_exists):
+        self.assertFalse(repair_boot_loader("bcdboot.exe", "S", "F"))
+
 
 if __name__ == '__main__':
     unittest.main(verbosity=2)
