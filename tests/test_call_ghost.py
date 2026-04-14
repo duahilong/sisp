@@ -94,6 +94,8 @@ class TestCallGhostMocked(unittest.TestCase):
         
         self.assertTrue(result)
         mock_popen.assert_called_once()
+        command_args = mock_popen.call_args[0][0]
+        self.assertIn("dst=1:2", command_args[1])
 
     @patch('call_ghost.os.path.exists')
     def test_ghost_exe_not_found(self, mock_exists):

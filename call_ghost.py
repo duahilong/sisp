@@ -59,7 +59,7 @@ def call_ghost(disk_number: Union[int, str], gho_exe: str, win_gho: str, c_lette
     调用Ghost软件对指定硬盘进行镜像刻录
     
     参数:
-        disk_number (int or str): 目标硬盘编号 (例如: 1, 2, 3等)
+        disk_number (int or str): Ghost目标硬盘编号(1-based, 已完成转换)
         gho_exe (str): Ghost可执行文件的相对路径
         win_gho (str): 需要刻录的镜像文件路径
         c_letter (str): 验证的盘符字母，用于验证Windows文件夹是否存在
@@ -100,10 +100,10 @@ def call_ghost(disk_number: Union[int, str], gho_exe: str, win_gho: str, c_lette
             raise ValueError(f"disk_number必须是整数或字符串类型，当前类型: {type(disk_number)}")
         
         # 构建Ghost命令
-        # 格式: ghost.exe -clone,mode=pload,src=镜像文件:1,dst=硬盘编号:2 -sure -ntexact
+        # 格式: ghost.exe -clone,mode=pload,src=镜像文件:1,dst=Ghost硬盘编号:2 -sure -ntexact
         gho_command = [
             gho_exe,
-            f"-clone,mode=pload,src={win_gho}:1,dst={disk_number + 1}:2",
+            f"-clone,mode=pload,src={win_gho}:1,dst={disk_number}:2",
             "-sure",
             "-ntexact",
         ]

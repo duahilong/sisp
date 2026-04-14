@@ -61,6 +61,13 @@ def resolve_c_size(disk_number: int, fallback_c_size: int, config_data: Dict[str
         print(f"[WARN] 动态计算 c_size 失败({e})，沿用配置 c_size={fallback_c_size}")
         return fallback_c_size
 
+
+def windows_disk_to_ghost_disk(windows_disk_number: int) -> int:
+    """将 Windows(0-based) 磁盘编号转换为 Ghost(1-based) 磁盘编号。"""
+    if not isinstance(windows_disk_number, int) or windows_disk_number < 0:
+        raise ValueError(f"无效Windows磁盘编号: {windows_disk_number}")
+    return windows_disk_number + 1
+
 class CustomArgumentParser(argparse.ArgumentParser):
     """
     重写 ArgumentParser，以便在发生错误或程序退出时，
@@ -273,7 +280,9 @@ if __name__ == "__main__":
             # 执行Ghost镜像恢复
             ghost_ok = False
             try:
-                ghost_ok = call_ghost(disk_number, gho_exe, win_gho, c_letter)
+                ghost_disk_number = windows_disk_to_ghost_disk(disk_number)
+                print(f"[INFO] 磁盘编号转换: Windows={disk_number} -> Ghost={ghost_disk_number}")
+                ghost_ok = call_ghost(ghost_disk_number, gho_exe, win_gho, c_letter)
             except Exception as e:
                 print(f"[ERROR] Ghost镜像恢复异常: {e}")
 
