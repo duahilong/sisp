@@ -239,45 +239,24 @@ def all_disk_partitions(disk_number, efi_size, c_size, software_path=None):
     return True
 
 
-
-if __name__ == "__main__":
-    
-    args = parse_arguments()
-    disk_number = args.disk
-    json_data = setup_json_config(args)
-    
-    # 检查JSON数据是否有效
-    if not json_data:
-        print("X JSON配置数据无效，程序终止。")
-        pause_if_interactive("请按 Enter 键退出...")
-        sys.exit(1)
-
-    try:
-        validate_main_config(json_data)
-    except ValueError as e:
-        print(f"[ERROR] 配置校验失败: {e}")
-        pause_if_interactive("请按 Enter 键退出...")
-        sys.exit(1)
-    
+def execute_install_flow(disk_number: int, json_data: Dict[str, Any]) -> bool:
+    """执行完整安装流程：验证 -> 分区 -> Ghost -> bcdboot。"""
     efi_size = json_data.get("efi_size")
-    c_size = json_data.get("c_size")
-    c_size = resolve_c_size(disk_number, c_size, json_data)
+    c_size = resolve_c_size(disk_number, json_data.get("c_size"), json_data)
     gho_exe = json_data.get("gho_exe")
     win_gho = json_data.get("win_gho")
     bcd_exe = json_data.get("bcd_exe")
     efi_letter = get_disk_letter(disk_number, 'efi')
     c_letter = get_disk_letter(disk_number, 'c')
     software_file = json_data.get("software_file")
-    # 验证磁盘是否可操作
+
     if validate_protected_disk(disk_number, json_data):
         print("[OK] 磁盘验证通过")
-        
-        # 执行磁盘分区
+
         if all_disk_partitions(disk_number, efi_size, c_size, software_file):
             print("[OK] 磁盘分区完成")
             time.sleep(5)
-            
-            # 执行Ghost镜像恢复
+
             ghost_ok = False
             try:
                 ghost_disk_number = windows_disk_to_ghost_disk(disk_number)
@@ -289,19 +268,47 @@ if __name__ == "__main__":
             if ghost_ok:
                 print("[OK] Ghost镜像恢复完成")
                 time.sleep(5)
-                
-                # 修复启动加载器
+
                 if repair_boot_loader(bcd_exe, efi_letter, c_letter):
                     print("[OK] 启动加载器修复完成")
                     print("[OK] 所有操作成功完成!")
+                    return True
                 else:
                     print("[ERROR] 启动加载器修复失败")
+                    return False
             else:
                 print("[ERROR] Ghost镜像恢复失败")
+                return False
         else:
             print("[ERROR] 磁盘分区失败")
+            return False
     else:
         print("[ERROR] 磁盘验证失败，操作终止")
+        return False
 
 
+def main_entry() -> int:
+    """主入口流程，返回进程退出码。"""
+    args = parse_arguments()
+    json_data = setup_json_config(args)
+
+    if not json_data:
+        print("X JSON配置数据无效，程序终止。")
+        pause_if_interactive("请按 Enter 键退出...")
+        return 1
+
+    try:
+        validate_main_config(json_data)
+    except ValueError as e:
+        print(f"[ERROR] 配置校验失败: {e}")
+        pause_if_interactive("请按 Enter 键退出...")
+        return 1
+
+    success = execute_install_flow(args.disk, json_data)
     pause_if_interactive("请按 Enter 键退出...")
+    return 0 if success else 1
+
+
+
+if __name__ == "__main__":
+    sys.exit(main_entry())
