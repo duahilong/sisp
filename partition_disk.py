@@ -269,8 +269,8 @@ def initialize_disk_to_partitioning_D(disk_number, d_letter=None, efi_size=None,
             print(f"[ERROR] {msg}")
             return False
     
-    print("没有指定D分区的盘符或C分区大小，不执行任何分区操作。")
-    return True
+    print("[ERROR] D分区参数缺失：必须提供 d_letter、efi_size 和 c_size")
+    return False
 
 
 def initialize_disk_to_partitioning_E(disk_number, e_letter=None):

@@ -18,8 +18,8 @@ class TestPartitionDiskExtended(unittest.TestCase):
         self.assertFalse(initialize_disk_to_partitioning_D(1, 'G', 100, 153600))
 
     @patch('partition_disk.is_admin', return_value=True)
-    def test_d_partition_missing_params_returns_true(self, _mock_admin):
-        self.assertTrue(initialize_disk_to_partitioning_D(1, None, 100, 153600))
+    def test_d_partition_missing_params_returns_false(self, _mock_admin):
+        self.assertFalse(initialize_disk_to_partitioning_D(1, None, 100, 153600))
 
     @patch('partition_disk.is_admin', return_value=True)
     def test_d_partition_invalid_sizes(self, _mock_admin):
