@@ -54,7 +54,7 @@ sisp/
 - `c_size`：C 分区大小（MB）。例如 `153600` 表示 150GB。
 - `enable_dynamic_c_size`：是否按磁盘容量动态覆盖 `c_size`（`true`/`false`）
   - `< 600GB` -> `c_size = 153600`（150GB）
-  - `>= 600GB 且 < 1200GB` -> `c_size = 204800`（200GB）
+  - `>= 600GB 且 < 1200GB` -> `c_size = 307200`（300GB）
   - `>= 1200GB` -> `c_size = 307200`（300GB）
 - `gho_exe`：Ghost 程序路径
 - `win_gho`：系统镜像路径
@@ -122,7 +122,7 @@ python -m PyInstaller --clean main_logic_processing.spec
 - 新增 `enable_dynamic_c_size` 配置开关，控制是否按目标磁盘容量动态覆盖 `c_size`。
 - 动态规则已实现并接入主流程：
   - `< 600GB` -> `c_size = 153600`（150GB）
-  - `>= 600GB 且 < 1200GB` -> `c_size = 204800`（200GB）
+  - `>= 600GB 且 < 1200GB` -> `c_size = 307200`（300GB）
   - `>= 1200GB` -> `c_size = 307200`（300GB）
 - 开关关闭时保持原行为，继续使用 JSON 中固定 `c_size`，确保向后兼容。
 - 分区流程当前为：`GPT(含EFI创建) -> C -> (容量>=600GB 时创建 D) -> E`，任一步失败即中断。

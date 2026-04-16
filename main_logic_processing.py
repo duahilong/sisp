@@ -36,7 +36,7 @@ def get_dynamic_c_size(disk_size_gb: float) -> int:
     if disk_size_gb < 600:
         return 153600
     if disk_size_gb < 1200:
-        return 204800
+        return 307200
     return 307200
 
 

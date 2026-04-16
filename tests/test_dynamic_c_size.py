@@ -15,8 +15,8 @@ from main_logic_processing import get_dynamic_c_size, parse_capacity_gb, resolve
 class TestDynamicCSize(unittest.TestCase):
     def test_get_dynamic_c_size_rules(self):
         self.assertEqual(get_dynamic_c_size(599.9), 153600)
-        self.assertEqual(get_dynamic_c_size(600), 204800)
-        self.assertEqual(get_dynamic_c_size(1199.9), 204800)
+        self.assertEqual(get_dynamic_c_size(600), 307200)
+        self.assertEqual(get_dynamic_c_size(1199.9), 307200)
         self.assertEqual(get_dynamic_c_size(1200), 307200)
 
     def test_parse_capacity_gb(self):
@@ -32,7 +32,7 @@ class TestDynamicCSize(unittest.TestCase):
         mock_get_disk_manager.return_value = mock_mgr
 
         result = resolve_c_size(1, 153600, {"enable_dynamic_c_size": True})
-        self.assertEqual(result, 204800)
+        self.assertEqual(result, 307200)
 
     def test_resolve_c_size_disabled(self):
         result = resolve_c_size(1, 153600, {"enable_dynamic_c_size": False})
